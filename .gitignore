@@ -1,0 +1,22 @@
+# IDE / compiler generated files and folders
+bin
+obj
+.vs
+*/Properties
+/.idea
+/.ionide
+__pycache__
+
+# Generated results
+*/Results/*
+*/Results*/*
+
+# Debugging stuff
+log
+*.nettrace
+*.speedscope.json
+
+# Blender backups
+blend1
+
+
