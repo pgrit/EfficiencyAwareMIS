@@ -32,13 +32,13 @@ public class PathLengthEstimatingVcm : MergeMaskVcm {
         Scene.FrameBuffer.MetaData["AveragePhotonsPerQuery"] = AveragePhotonsPerQuery;
     }
 
-    protected override void PreIteration(uint iteration) {
-        base.PreIteration(iteration);
+    protected override void OnStartIteration(uint iteration) {
+        base.OnStartIteration(iteration);
 
         if (iteration > 0) {
             float numPixels = Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
             AverageCameraPathLength = TotalCameraPathLength / numPixels;
-            AveragePhotonsPerQuery = TotalMergePhotons / (float)TotalMergeOperations;
+            AveragePhotonsPerQuery = TotalMergeOperations == 0 ? 0 : TotalMergePhotons / (float)TotalMergeOperations;
             AverageLightPathLength = ComputeAverageLightPathLength();
         }
 

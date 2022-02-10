@@ -19,7 +19,7 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
     /// <summary>
     /// If true, disables correl-aware weighting
     /// </summary>
-    public bool Disable = false;
+    public bool DisableCorrelAware = false;
 
     /// <summary>
     /// Gathers the pdfs used for correl-aware weights and computes the heuristic value
@@ -35,7 +35,7 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
             this.numPaths = numPaths;
             this.parent = parent;
 
-            if (parent.CorrelAwareRadius == null || parent.Disable) {
+            if (parent.CorrelAwareRadius == null || parent.DisableCorrelAware) {
                 cameraToLight = null;
                 lightToCamera = null;
                 return;
@@ -78,7 +78,7 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
                 if (idx == 0) return 1; // primary merges are not correlated
                 if (numPaths == 0) return 1; // merging is disabled, don't touch anything!
 
-                if (parent.Disable) return 1;
+                if (parent.DisableCorrelAware) return 1;
 
                 float light = lightToCamera[idx];
                 float cam = cameraToLight[idx];

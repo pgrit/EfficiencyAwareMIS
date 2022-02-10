@@ -13,9 +13,28 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
     /// The probability depends on the actual number of light subpath vertices, which we cannot know.
     /// It is approximated via the current estimate / initial guess of the average path length.
     /// </summary>
-    float BidirSelectDensityProxy => NumConnections / AverageLightPathLength;
+    protected float BidirSelectDensityProxy {
+        get {
+            if (AverageCameraPathLength == 0) // No path length statistics have been computed yet
+                return NumConnectionsProxy / 5.0f;
 
-    int NumLightPathsProxyStrategy => 500000; // Arbitrary but around the same order as the number of pixels.
+            if (AverageLightPathLength == 0) // No light paths have been traced
+                return NumConnectionsProxy / AverageCameraPathLength;
+
+            return NumConnectionsProxy / AverageLightPathLength;
+        }
+    }
+
+    /// <summary>
+    /// Number of connections in the proxy strategy. Arbitrary but around the same order as the typical values.
+    /// </summary>
+    protected int NumConnectionsProxy => 4;
+
+    /// <summary>
+    /// Number of light paths in the proxy strategy. Typically the same order of magnitude as the number of
+    /// pixels, so equal to those.
+    /// </summary>
+    protected int NumLightPathsProxyStrategy => Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
 
     /// <summary>
     /// Set to false (in-between iterations) to stop updating the moment estimates, which reduces the overhead.
@@ -90,9 +109,13 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Sum of the MIS weights of all merging techniques
         (float vm, float vmCov) = ComputeMergeMisWithProxy(1, pathPdfs, pixel, diffRatio, radius);
 
+        // MIS weights must sum to one. We don't compute the connection weights explicitly, so make sure
+        // that everything else is below one, up to some numerical error margin.
+        Debug.Assert(pt + lt + vm < 1.0f + 1e-6f);
+
         return new() {
             PathTracing = pt,
-            Connections = 1.0f - pt - lt - vm, // Sum of all connection MIS weights, since they must sum to 1
+            Connections = Math.Clamp(1.0f - pt - lt - vm, 0, 1), // Prevent negative moments due to small numerical errors
             LightTracing = lt,
             Merges = vm,
             MergesTimesCorrelAware = vmCov,
@@ -142,6 +165,7 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
                                                 PathVertex lightVertex, float pdfCamToPrimary,
                                                 float pdfReverse, float pdfNextEvent, float distToCam) {
         if (!UpdateEstimates) return;
+        if (weight == RgbColor.Black) return;
 
         int numPdfs = lightVertex.Depth + 1;
         int lastCameraVertexIdx = -1;
@@ -166,6 +190,7 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
                                               float pdfReverse, Emitter emitter, Vector3 lightToSurface,
                                               SurfacePoint lightPoint) {
         if (!UpdateEstimates) return;
+        if (weight == RgbColor.Black) return;
 
         int numPdfs = cameraPath.Vertices.Count + 1;
         int lastCameraVertexIdx = numPdfs - 2;
@@ -196,6 +221,7 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
                                                float pdfEmit, float pdfNextEvent, Emitter emitter,
                                                Vector3 lightToSurface, SurfacePoint lightPoint) {
         if (!UpdateEstimates) return;
+        if (weight == RgbColor.Black) return;
 
         int numPdfs = cameraPath.Vertices.Count;
         int lastCameraVertexIdx = numPdfs - 1;
@@ -225,6 +251,7 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
                                                  float pdfCameraToLight, float pdfLightReverse,
                                                  float pdfLightToCamera, float pdfNextEvent) {
         if (!UpdateEstimates) return;
+        if (weight == RgbColor.Black) return;
 
         int numPdfs = cameraPath.Vertices.Count + lightVertex.Depth + 1;
         int lastCameraVertexIdx = cameraPath.Vertices.Count - 1;
@@ -252,7 +279,11 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
     protected override void OnMergeSample(RgbColor weight, float kernelWeight, float misWeight,
                                           CameraPath cameraPath, PathVertex lightVertex,
                                           float pdfCameraReverse, float pdfLightReverse, float pdfNextEvent) {
+        base.OnMergeSample(weight, kernelWeight, misWeight, cameraPath, lightVertex, pdfCameraReverse,
+            pdfLightReverse, pdfNextEvent);
+
         if (!UpdateEstimates) return;
+        if (weight == RgbColor.Black) return;
 
         int numPdfs = cameraPath.Vertices.Count + lightVertex.Depth;
         int lastCameraVertexIdx = cameraPath.Vertices.Count - 1;
