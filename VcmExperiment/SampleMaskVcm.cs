@@ -3,12 +3,20 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// <summary>
 /// A VCM integrator where every pixel performs merging only with a certain probability.
 /// </summary>
-public class MergeMaskVcm : CorrelAwareVcm {
-    protected float MergeProbability(Vector2 pixel) {
+public class SampleMaskVcm : CorrelAwareVcm {
+    protected float GetPerPixelMergeProbability(Vector2 pixel) {
         if (!EnableMerging) return 0.0f;
 
         return 1.0f;
         // TODO implement me
+    }
+
+    protected float GetPerPixelConnectionCount(Vector2 pixel) {
+        return NumConnections;
+
+        // TODO implement me
+
+        // TODO use in MIS weights
     }
 
     /// <summary>
@@ -21,7 +29,7 @@ public class MergeMaskVcm : CorrelAwareVcm {
         if (path.Vertices.Count == 1 && !MergePrimary) return RgbColor.Black;
 
         // Randomly reject merging at this vertex based on the per-pixel probability
-        float mergeProbability = MergeProbability(path.Pixel);
+        float mergeProbability = GetPerPixelMergeProbability(path.Pixel);
         if (rng.NextFloat() > mergeProbability) return RgbColor.Black;
 
         var estimate = base.PerformMerging(ray, hit, rng, path, cameraJacobian) / mergeProbability;
@@ -31,7 +39,7 @@ public class MergeMaskVcm : CorrelAwareVcm {
 
     protected override float CameraPathReciprocals(int lastCameraVertexIdx, BidirPathPdfs pdfs,
                                                    Vector2 pixel, PdfRatio correlRatio, float radius) {
-        float mergeProbability = EnableMerging ? MergeProbability(pixel) : 0;
+        float mergeProbability = EnableMerging ? GetPerPixelMergeProbability(pixel) : 0;
         float bidirDensity = NumConnections > 0 ? BidirSelectDensity() : 0;
         return CameraPathReciprocals(lastCameraVertexIdx, pdfs, pixel, correlRatio,
                                      NumLightPaths.Value, bidirDensity, mergeProbability, radius);
@@ -39,7 +47,7 @@ public class MergeMaskVcm : CorrelAwareVcm {
 
     protected override float LightPathReciprocals(int lastCameraVertexIdx, BidirPathPdfs pdfs,
                                                  Vector2 pixel, PdfRatio correlRatio, float radius) {
-        float mergeProbability = EnableMerging ? MergeProbability(pixel) : 0;
+        float mergeProbability = EnableMerging ? GetPerPixelMergeProbability(pixel) : 0;
         float bidirDensity = NumConnections > 0 ? BidirSelectDensity() : 0;
         return LightPathReciprocals(lastCameraVertexIdx, pdfs, pixel, correlRatio,
                                     NumLightPaths.Value, bidirDensity, mergeProbability, radius);

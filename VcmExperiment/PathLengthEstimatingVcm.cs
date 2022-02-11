@@ -4,7 +4,7 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// Computes the average path lengths and average photon counts of a VCM integrator. The counts are reset
 /// after each iteration.
 /// </summary>
-public class PathLengthEstimatingVcm : MergeMaskVcm {
+public class PathLengthEstimatingVcm : SampleMaskVcm {
     long TotalCameraPathLength = 0;
     long TotalMergeOperations = 0;
     long TotalMergePhotons = 0;

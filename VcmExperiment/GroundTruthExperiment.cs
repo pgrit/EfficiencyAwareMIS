@@ -26,11 +26,8 @@ class GroundTruthExperiment : Experiment {
             //     NumIterations = 2,
             // }),
             new("OurDecisionCorrelAware", new AdaptiveVcm() {
-                // NumLightPaths = 0,
-                // NumConnections = 0,
                 DisableCorrelAware = false,
-                // EnableMerging = false,
-                NumIterations = 2,
+                NumIterations = 32,
             })
         };
 
