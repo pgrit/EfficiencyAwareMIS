@@ -10,18 +10,26 @@ class GroundTruthExperiment : Experiment {
             // new("VanillaVcm", new CorrelAwareVcm() {
             //     NumIterations = 2
             // }),
-            new("OurDecision", new AdaptiveVcm() {
+            // new("VanillaBdpt", new CorrelAwareVcm() {
+            //     NumIterations = 2,
+            //     EnableMerging = false,
+            // }),
+            // new("OurBdptDecision", new AdaptiveVcm() {
+            //     EnableMerging = false,
+            //     NumIterations = 2,
+            // }),
+            // new("OurDecision", new AdaptiveVcm() {
+            //     // NumLightPaths = 0,
+            //     // NumConnections = 0,
+            //     DisableCorrelAware = true,//false,
+            //     // EnableMerging = false,
+            //     NumIterations = 2,
+            // }),
+            new("OurDecisionCorrelAware", new AdaptiveVcm() {
                 // NumLightPaths = 0,
                 // NumConnections = 0,
                 DisableCorrelAware = false,
                 // EnableMerging = false,
-                NumIterations = 2,
-            }),
-            new("OurDecisionPT", new AdaptiveVcm() {
-                NumLightPaths = 0,
-                NumConnections = 0,
-                DisableCorrelAware = false,
-                EnableMerging = false,
                 NumIterations = 2,
             })
         };
