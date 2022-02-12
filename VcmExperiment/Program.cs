@@ -19,6 +19,7 @@ Benchmark benchmark = new(new GroundTruthExperiment(), new() {
     SceneRegistry.LoadScene("RoughGlassesIndirect", maxDepth: 10, minDepth: 1),
     SceneRegistry.LoadScene("CountryKitchen", maxDepth: 5, minDepth: 1),
     SceneRegistry.LoadScene("Bedroom", maxDepth: 5, minDepth: 1),
+    SceneRegistry.LoadScene("LampCausticNoShade", maxDepth: 10, minDepth: 1),
 
     // Other scenes
     // SceneRegistry.LoadScene("GlassOfWater", maxDepth: 10, minDepth: 1),
@@ -26,7 +27,6 @@ Benchmark benchmark = new(new GroundTruthExperiment(), new() {
     // SceneRegistry.LoadScene("ModernHall", maxDepth: 5, minDepth: 1),
     // SceneRegistry.LoadScene("ReverseCornellBox", maxDepth: 5, minDepth: 1),
     // SceneRegistry.LoadScene("SpongeScene", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("LampCausticNoShade", maxDepth: 10, minDepth: 1),
     // SceneRegistry.LoadScene("RoughNoGlasses", maxDepth: 10, minDepth: 1),
     // SceneRegistry.LoadScene("Bathroom2", maxDepth: 5, minDepth: 1),
     // SceneRegistry.LoadScene("DiningRoom", maxDepth: 5, minDepth: 1),
