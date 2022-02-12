@@ -109,9 +109,16 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Sum of the MIS weights of all merging techniques
         (float vm, float vmCov) = ComputeMergeMisWithProxy(1, pathPdfs, pixel, diffRatio, radius);
 
+        if (ltRecip == 0 && ptRecip == 0) { // catch corner case (path cannot be sampled bidirectionally)
+            pt = 1;
+            lt = 0;
+            vm = 0;
+            vmCov = 0;
+        }
+
         // MIS weights must sum to one. We don't compute the connection weights explicitly, so make sure
         // that everything else is below one, up to some numerical error margin.
-        Debug.Assert(pt + lt + vm < 1.0f + 1e-6f);
+        // Debug.Assert(pt + lt + vm < 1.0f + 1e-3f);
 
         return new() {
             PathTracing = pt,

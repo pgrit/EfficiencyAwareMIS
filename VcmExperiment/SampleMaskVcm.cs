@@ -1,22 +1,98 @@
 namespace EfficiencyAwareMIS.VcmExperiment;
 
 /// <summary>
-/// A VCM integrator where every pixel performs merging only with a certain probability.
+/// A VCM integrator where every pixel performs merging only with a certain probability. The actual logic
+/// of how to decide the sample counts is implemented in the derived class by overriding
+/// <see cref="GetPerPixelMergeProbability"/> and <see cref="GetPerPixelConnectionCount"/>.
+/// The default uses constant values based on the global parameters from the base class.
 /// </summary>
 public class SampleMaskVcm : CorrelAwareVcm {
-    protected float GetPerPixelMergeProbability(Vector2 pixel) {
+    protected virtual float GetPerPixelMergeProbability(Vector2 pixel) {
         if (!EnableMerging) return 0.0f;
-
         return 1.0f;
-        // TODO implement me
     }
 
-    protected float GetPerPixelConnectionCount(Vector2 pixel) {
+    protected virtual float GetPerPixelConnectionCount(Vector2 pixel) {
         return NumConnections;
+    }
 
-        // TODO implement me
+    public override float BidirSelectDensity(Vector2 pixel) {
+        if (vertexSelector.Count == 0) return 0;
 
-        // TODO use in MIS weights
+        // We select light path vertices uniformly
+        float selectProb = 1.0f / vertexSelector.Count;
+
+        // There are "NumLightPaths" samples that could have generated the selected vertex,
+        // we repeat the process "NumConnections" times
+        float numSamples = GetPerPixelConnectionCount(pixel) * NumLightPaths.Value;
+
+        return selectProb * numSamples;
+    }
+
+    protected override void ProcessPathCache() {
+        // always create vertex cache, we don't bother checking all pixels whether they actually do connections
+        vertexSelector = new VertexSelector(LightPaths.PathCache);
+        if (EnableLightTracer) SplatLightVertices();
+
+        if (EnableMerging) {
+            int index = 0;
+            photons.Clear();
+            photonMap.Clear();
+            for (int i = 0; i < LightPaths.NumPaths; ++i) {
+                for (int k = 1; k < LightPaths.PathCache.Length(i); ++k) {
+                    var vertex = LightPaths.PathCache[i, k];
+                    if (vertex.Depth >= 1 && vertex.Weight != RgbColor.Black) {
+                        photonMap.AddPoint(vertex.Point.Position, index++);
+                        photons.Add((i, k));
+                    }
+                }
+            }
+            photonMap.Build();
+        }
+    }
+
+    /// <summary>
+    /// Turns a real-valued sample count into an integer one. Fractional part is rounded stochastically. I.e.
+    /// 1.7 yields 2 with a 70% probability and 1 with a 30% probability.
+    /// </summary>
+    /// <param name="rng">Random number generator</param>
+    /// <param name="value">The real-valued sample count</param>
+    /// <returns>Stochastically rounded integer</returns>
+    int StochasticRound(RNG rng, float value) {
+        int num = (int)value;
+        float residual = value - num;
+        if (rng.NextFloat() < residual) num++;
+        return num;
+    }
+
+    /// <inheritdoc />
+    protected override RgbColor OnCameraHit(CameraPath path, RNG rng, Ray ray, SurfacePoint hit,
+                                            float pdfFromAncestor, RgbColor throughput, int depth,
+                                            float toAncestorJacobian) {
+        RgbColor value = RgbColor.Black;
+
+        // Was a light hit?
+        Emitter light = Scene.QueryEmitter(hit);
+        if (light != null && EnableHitting && depth >= MinDepth) {
+            value += throughput * OnEmitterHit(light, hit, ray, path, toAncestorJacobian);
+        }
+
+        // Perform connections if the maximum depth has not yet been reached
+        if (depth < MaxDepth) {
+            int numConnect = StochasticRound(rng, GetPerPixelConnectionCount(path.Pixel));
+            for (int i = 0; i < numConnect; ++i) {
+                value += throughput * BidirConnections(hit, -ray.Direction, rng, path, toAncestorJacobian);
+            }
+            value += throughput * PerformMerging(ray, hit, rng, path, toAncestorJacobian);
+        }
+
+        if (depth < MaxDepth && depth + 1 >= MinDepth) {
+            for (int i = 0; i < NumShadowRays; ++i) {
+                value += throughput * PerformNextEventEstimation(ray, hit, rng, path, toAncestorJacobian);
+            }
+        }
+
+        return value;
     }
 
     /// <summary>
@@ -39,16 +115,16 @@ public class SampleMaskVcm : CorrelAwareVcm {
 
     protected override float CameraPathReciprocals(int lastCameraVertexIdx, BidirPathPdfs pdfs,
                                                    Vector2 pixel, PdfRatio correlRatio, float radius) {
-        float mergeProbability = EnableMerging ? GetPerPixelMergeProbability(pixel) : 0;
-        float bidirDensity = NumConnections > 0 ? BidirSelectDensity() : 0;
+        float mergeProbability = GetPerPixelMergeProbability(pixel);
+        float bidirDensity = BidirSelectDensity(pixel);
         return CameraPathReciprocals(lastCameraVertexIdx, pdfs, pixel, correlRatio,
                                      NumLightPaths.Value, bidirDensity, mergeProbability, radius);
     }
 
     protected override float LightPathReciprocals(int lastCameraVertexIdx, BidirPathPdfs pdfs,
                                                  Vector2 pixel, PdfRatio correlRatio, float radius) {
-        float mergeProbability = EnableMerging ? GetPerPixelMergeProbability(pixel) : 0;
-        float bidirDensity = NumConnections > 0 ? BidirSelectDensity() : 0;
+        float mergeProbability = GetPerPixelMergeProbability(pixel);
+        float bidirDensity = BidirSelectDensity(pixel);
         return LightPathReciprocals(lastCameraVertexIdx, pdfs, pixel, correlRatio,
                                     NumLightPaths.Value, bidirDensity, mergeProbability, radius);
     }

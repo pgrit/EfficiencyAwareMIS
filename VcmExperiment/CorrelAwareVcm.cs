@@ -138,7 +138,7 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
 
         // Add the reciprocal for the connection that replaces the last light path edge
         if (lightVertex.Depth > 1 && NumConnections > 0)
-            sumReciprocals += BidirSelectDensity() / mergeApproximation;
+            sumReciprocals += BidirSelectDensity(cameraPath.Pixel) / mergeApproximation;
 
         return 1 / sumReciprocals;
     }
@@ -230,10 +230,10 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
         float sumReciprocals = 1.0f;
         sumReciprocals +=
             CameraPathReciprocals(lastCameraVertexIdx, pathPdfs, cameraPath.Pixel, correlRatio, radius)
-            / BidirSelectDensity();
+            / BidirSelectDensity(cameraPath.Pixel);
         sumReciprocals +=
             LightPathReciprocals(lastCameraVertexIdx, pathPdfs, cameraPath.Pixel, correlRatio, radius)
-            / BidirSelectDensity();
+            / BidirSelectDensity(cameraPath.Pixel);
 
         return 1 / sumReciprocals;
     }
@@ -298,7 +298,7 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
             nextReciprocal *= pdfs.PdfsLightToCamera[i] / pdfs.PdfsCameraToLight[i];
 
             // Connecting this vertex to the next one along the camera path
-            if (NumConnections > 0) sumReciprocals += nextReciprocal * BidirSelectDensity();
+            if (NumConnections > 0) sumReciprocals += nextReciprocal * BidirSelectDensity(pixel);
 
             Debug.Assert(float.IsFinite(sumReciprocals));
         }
@@ -343,7 +343,7 @@ public class CorrelAwareVcm : VertexConnectionAndMerging {
 
             // Account for connections from this vertex to its ancestor
             if (i < pdfs.NumPdfs - 2) // Connections to the emitter (next event) are treated separately
-                if (NumConnections > 0) sumReciprocals += nextReciprocal * BidirSelectDensity();
+                if (NumConnections > 0) sumReciprocals += nextReciprocal * BidirSelectDensity(pixel);
         }
         // Next event and hitting the emitter directly
         if (NumShadowRays > 0 || EnableHitting) sumReciprocals += nextReciprocal;

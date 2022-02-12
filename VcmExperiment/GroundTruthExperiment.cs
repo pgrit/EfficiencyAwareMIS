@@ -7,8 +7,9 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 class GroundTruthExperiment : Experiment {
     public override List<Method> MakeMethods() {
         List<Method> methods = new() {
-            // new("VanillaVcm", new CorrelAwareVcm() {
-            //     NumIterations = 2
+            // new("VanillaVcm", new SampleMaskVcm() {
+            //     NumIterations = 4,
+            //     RenderTechniquePyramid = true,
             // }),
             // new("VanillaBdpt", new CorrelAwareVcm() {
             //     NumIterations = 2,
@@ -26,8 +27,12 @@ class GroundTruthExperiment : Experiment {
             //     NumIterations = 2,
             // }),
             new("OurDecisionCorrelAware", new AdaptiveVcm() {
-                DisableCorrelAware = false,
-                NumIterations = 32,
+                DisableCorrelAware = true,//false,
+                NumIterations = 4,
+                WriteMomentImages = true,
+                // NumLightPaths = 0,
+                // NumConnections = 0,
+                // EnableMerging = false,
             })
         };
 

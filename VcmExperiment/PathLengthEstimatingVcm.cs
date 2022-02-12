@@ -35,17 +35,19 @@ public class PathLengthEstimatingVcm : SampleMaskVcm {
     protected override void OnStartIteration(uint iteration) {
         base.OnStartIteration(iteration);
 
-        if (iteration > 0) {
-            float numPixels = Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
-            AverageCameraPathLength = TotalCameraPathLength / numPixels;
-            AveragePhotonsPerQuery = TotalMergeOperations == 0 ? 0 : TotalMergePhotons / (float)TotalMergeOperations;
-            AverageLightPathLength = ComputeAverageLightPathLength();
-        }
-
         // Reset statistics
         TotalCameraPathLength = 0;
         TotalMergeOperations = 0;
         TotalMergePhotons = 0;
+    }
+
+    protected override void OnEndIteration(uint iteration) {
+        base.OnEndIteration(iteration);
+
+        float numPixels = Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
+        AverageCameraPathLength = TotalCameraPathLength / numPixels;
+        AveragePhotonsPerQuery = TotalMergeOperations == 0 ? 0 : TotalMergePhotons / (float)TotalMergeOperations;
+        AverageLightPathLength = ComputeAverageLightPathLength();
     }
 
     protected override void OnCameraPathTerminate(CameraPath path)
