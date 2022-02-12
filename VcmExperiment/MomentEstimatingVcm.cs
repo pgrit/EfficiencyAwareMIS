@@ -7,7 +7,7 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// method is invoked. Derived classes can implement the <see cref="OnMomentSample" /> method to estimate the
 /// desired moments or derivatives from the pre-computed data.
 /// </summary>
-public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
+public class MomentEstimatingVcm : PathLengthEstimatingVcm {
     /// <summary>
     /// Product of selection probability and sample count for connections in the proxy strategy.
     /// The probability depends on the actual number of light subpath vertices, which we cannot know.
@@ -81,8 +81,8 @@ public abstract class MomentEstimatingVcm : PathLengthEstimatingVcm {
     /// <param name="pathLength">Number of edges along the path</param>
     /// <param name="proxyWeights">MIS weights of the proxy strategy</param>
     /// <param name="pixel">The pixel this path contributes to</param>
-    protected abstract void OnMomentSample(RgbColor weight, float kernelWeight, int pathLength,
-        ProxyWeights proxyWeights, Vector2 pixel);
+    protected virtual void OnMomentSample(RgbColor weight, float kernelWeight, int pathLength,
+                                          ProxyWeights proxyWeights, Vector2 pixel) { }
 
     /// <summary>
     /// Computes the MIS weights of the proxy strategy, from which we compute the correction factors for all

@@ -19,12 +19,12 @@ class CostHeuristic {
     /// <summary>
     /// Hyper-paramter: relative cost of a single bidirectional connection (one shadow ray, two BSDF eval)
     /// </summary>
-    public float CostConnect = 0.4f;
+    public float CostConnect = 0.3f;
 
     /// <summary>
     /// Hyper-parameter: relative cost of a single merge (one camera vertex, one light vertex)
     /// </summary>
-    public float CostMerge = 2.0f;//1.5f;
+    public float CostMerge = 2.5f;
 
     float numPixels;
     float avgCamLen;

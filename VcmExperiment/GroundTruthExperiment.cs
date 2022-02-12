@@ -7,33 +7,58 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 class GroundTruthExperiment : Experiment {
     public override List<Method> MakeMethods() {
         List<Method> methods = new() {
-            // new("VanillaVcm", new SampleMaskVcm() {
-            //     NumIterations = 4,
-            //     RenderTechniquePyramid = true,
+            // new("OurDecisionCorrelAware", new AdaptiveVcm() {
+            //     DisableCorrelAware = false,
+            //     NumIterations = 16,
+            //     MaxNumUpdates = 4,
+            //     NumConnections = 1,
+            //     EnableMerging = true,
+            //     WriteMomentImages = true,
             // }),
-            // new("VanillaBdpt", new CorrelAwareVcm() {
-            //     NumIterations = 2,
+            // new("VanillaVcm30s", new CorrelAwareVcm() {
+            //     NumIterations = int.MaxValue,
+            //     MaximumRenderTimeMs = 30000,
+            //     NumConnections = 1,
+            // }),
+            // new("Pt30s", new CorrelAwareVcm() {
+            //     NumIterations = int.MaxValue,
+            //     MaximumRenderTimeMs = 30000,
+            //     NumLightPaths = 0,
+            //     NumConnections = 0,
             //     EnableMerging = false,
             // }),
-            // new("OurBdptDecision", new AdaptiveVcm() {
-            //     EnableMerging = false,
-            //     NumIterations = 2,
-            // }),
-            // new("OurDecision", new AdaptiveVcm() {
-            //     // NumLightPaths = 0,
-            //     // NumConnections = 0,
-            //     DisableCorrelAware = true,//false,
-            //     // EnableMerging = false,
-            //     NumIterations = 2,
-            // }),
-            new("OurDecisionCorrelAware", new AdaptiveVcm() {
-                DisableCorrelAware = true,//false,
-                NumIterations = 4,
-                WriteMomentImages = true,
-                // NumLightPaths = 0,
-                // NumConnections = 0,
-                // EnableMerging = false,
-            })
+            new("Our30s", new AdaptiveVcm() {
+                DisableCorrelAware = false,
+                NumIterations = int.MaxValue,
+                MaximumRenderTimeMs = 30000,
+                MaxNumUpdates = 1,
+                NumConnections = 1,
+            }),
+            new("OurBdpt30s", new AdaptiveVcm() {
+                DisableCorrelAware = false,
+                NumIterations = int.MaxValue,
+                MaximumRenderTimeMs = 30000,
+                MaxNumUpdates = 1,
+                NumConnections = 1,
+                EnableMerging = false,
+            }),
+            new("OurGlobal30s", new AdaptiveVcm() {
+                DisableCorrelAware = false,
+                NumIterations = int.MaxValue,
+                MaximumRenderTimeMs = 30000,
+                MaxNumUpdates = 1,
+                NumConnections = 1,
+                UsePerPixelConnections = false,
+            }),
+            new("OurBdptGlobal30s", new AdaptiveVcm() {
+                DisableCorrelAware = false,
+                NumIterations = int.MaxValue,
+                MaximumRenderTimeMs = 30000,
+                MaxNumUpdates = 1,
+                NumConnections = 1,
+                UsePerPixelConnections = false,
+                EnableMerging = false,
+            }),
         };
 
         return methods;

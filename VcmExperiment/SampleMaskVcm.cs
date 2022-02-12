@@ -107,10 +107,62 @@ public class SampleMaskVcm : CorrelAwareVcm {
         // Randomly reject merging at this vertex based on the per-pixel probability
         float mergeProbability = GetPerPixelMergeProbability(path.Pixel);
         if (rng.NextFloat() > mergeProbability) return RgbColor.Black;
+        path.Throughput *= 1.0f / mergeProbability;
 
-        var estimate = base.PerformMerging(ray, hit, rng, path, cameraJacobian) / mergeProbability;
+        var estimate = base.PerformMerging(ray, hit, rng, path, cameraJacobian);
         OnCombinedMergeSample(ray, hit, rng, path, cameraJacobian, estimate);
         return estimate;
+    }
+
+    /// <summary>
+    /// Same as the base-class, except we additionally multiply with the merge probability
+    /// </summary>
+    /// <inheritdoc/>
+    public override float MergeMis(CameraPath cameraPath, PathVertex lightVertex, float pdfCameraReverse,
+                                   float pdfLightReverse, float pdfNextEvent) {
+        int numPdfs = cameraPath.Vertices.Count + lightVertex.Depth;
+        int lastCameraVertexIdx = cameraPath.Vertices.Count - 1;
+        Span<float> camToLight = stackalloc float[numPdfs];
+        Span<float> lightToCam = stackalloc float[numPdfs];
+
+        var pathPdfs = new BidirPathPdfs(LightPaths.PathCache, lightToCam, camToLight);
+        pathPdfs.GatherCameraPdfs(cameraPath, lastCameraVertexIdx);
+        pathPdfs.GatherLightPdfs(lightVertex, lastCameraVertexIdx - 1);
+
+        // Set the pdf values that are unique to this combination of paths
+        if (lastCameraVertexIdx > 0) // only if this is not the primary hit point
+            pathPdfs.PdfsLightToCamera[lastCameraVertexIdx - 1] = pdfCameraReverse;
+        pathPdfs.PdfsLightToCamera[lastCameraVertexIdx] = lightVertex.PdfFromAncestor;
+        pathPdfs.PdfsCameraToLight[lastCameraVertexIdx] = cameraPath.Vertices[^1].PdfFromAncestor;
+        pathPdfs.PdfsCameraToLight[lastCameraVertexIdx + 1] = pdfLightReverse + pdfNextEvent;
+
+        float radius = ComputeLocalMergeRadius(cameraPath.Distances[0]);
+
+        // Compute our additional heuristic values
+        var correlRatio = new PdfRatio(pathPdfs, radius, NumLightPaths.Value, this, cameraPath.Distances[0]);
+
+        // Compute the acceptance probability approximation
+        float mergeAcceptProb = pathPdfs.PdfsLightToCamera[lastCameraVertexIdx]
+                                 * MathF.PI * radius * radius * NumLightPaths.Value;
+        mergeAcceptProb *= correlRatio[lastCameraVertexIdx];
+        mergeAcceptProb *= GetPerPixelMergeProbability(cameraPath.Pixel);
+
+        if (mergeAcceptProb == 0.0f) return 0.0f;
+
+        // Compute reciprocals for hypothetical connections along the camera sub-path
+        float sumReciprocals = 0.0f;
+        sumReciprocals +=
+            CameraPathReciprocals(lastCameraVertexIdx, pathPdfs, cameraPath.Pixel, correlRatio, radius)
+            / mergeAcceptProb;
+        sumReciprocals +=
+            LightPathReciprocals(lastCameraVertexIdx, pathPdfs, cameraPath.Pixel, correlRatio, radius)
+            / mergeAcceptProb;
+
+        // Add the reciprocal for the connection that replaces the last light path edge
+        if (lightVertex.Depth > 1 && NumConnections > 0)
+            sumReciprocals += BidirSelectDensity(cameraPath.Pixel) / mergeAcceptProb;
+
+        return 1 / sumReciprocals;
     }
 
     protected override float CameraPathReciprocals(int lastCameraVertexIdx, BidirPathPdfs pdfs,
