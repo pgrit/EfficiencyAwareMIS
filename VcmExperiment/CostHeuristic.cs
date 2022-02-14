@@ -24,7 +24,7 @@ class CostHeuristic {
     /// <summary>
     /// Hyper-parameter: relative cost of a single merge (one camera vertex, one light vertex)
     /// </summary>
-    public float CostMerge = 2.5f;
+    public float CostMerge = 1.5f;
 
     float numPixels;
     float avgCamLen;

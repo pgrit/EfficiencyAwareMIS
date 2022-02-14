@@ -9,7 +9,7 @@ class GroundTruthExperiment : Experiment {
         List<Method> methods = new() {
             new("OurDecisionCorrelAware", new AdaptiveVcm() {
                 DisableCorrelAware = false,
-                NumIterations = 4,
+                NumIterations = 2,
                 MaxNumUpdates = 2,
                 NumConnections = 1,
                 EnableMerging = true,

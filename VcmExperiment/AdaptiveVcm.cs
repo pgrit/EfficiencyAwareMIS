@@ -1,7 +1,5 @@
 namespace EfficiencyAwareMIS.VcmExperiment;
 
-using FilterType = TiledEstimates;
-
 /// <summary>
 /// Adapts the number of light paths and number of connections during rendering, and disables merging on
 /// a per-pixel basis.
@@ -43,8 +41,9 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
     CostHeuristic CostHeuristic { get; set; } = new();
 
-    Dictionary<Candidate, IFilteredEstimates> momentImages;
-    IFilteredEstimates denoisedImage;
+    Dictionary<Candidate, MonochromeImage> momentImages;
+    Dictionary<Candidate, MonochromeImage> filteredMoments;
+    MonochromeImage denoisedImage;
 
     MonochromeImage mergeMask, connectMask;
 
@@ -61,29 +60,28 @@ class AdaptiveVcm : MomentEstimatingVcm {
         return connectMask.GetPixel((int)pixel.X, (int)pixel.Y);
     }
 
-    const int tileSize = 16;
-
     void InitCandidates() {
         int width = Scene.FrameBuffer.Width;
         int height = Scene.FrameBuffer.Height;
         int numPixels = Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
         momentImages = new();
+        filteredMoments = new();
         foreach (float nRel in NumLightPathCandidates) {
             foreach (int c in NumConnectionsCandidates) {
                 int n = (int)(numPixels * nRel);
-                if (EnableMerging) momentImages.Add(new(n, c, true), new FilterType(width, height, tileSize));
-                momentImages.Add(new(n, c, false), new FilterType(width, height, tileSize));
+                if (EnableMerging) {
+                    momentImages.Add(new(n, c, true), new MonochromeImage(width, height));
+                    filteredMoments.Add(new(n, c, true), new MonochromeImage(width, height));
+                }
+                momentImages.Add(new(n, c, false), new MonochromeImage(width, height));
+                filteredMoments.Add(new(n, c, false), new MonochromeImage(width, height));
             }
         }
-        momentImages.Add(new(0, 0, false), new FilterType(width, height, tileSize));
+        momentImages.Add(new(0, 0, false), new MonochromeImage(width, height));
+        filteredMoments.Add(new(0, 0, false), new MonochromeImage(width, height));
     }
 
     void OptimizePerPixel() {
-        // Reduce noise in the second moments via a simple lowpass filter
-        foreach (var (candidate, moment) in momentImages) {
-            moment.Prepare();
-        }
-
         // Make per-pixel decisions
         if (UsePerPixelMerges) mergeMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
         if (UsePerPixelConnections) connectMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
@@ -91,13 +89,13 @@ class AdaptiveVcm : MomentEstimatingVcm {
             for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
                 float bestWorkNorm = float.MaxValue;
                 Candidate bestCandidate = new();
-                foreach (var (candidate, moment) in momentImages) {
+                foreach (var (candidate, moment) in filteredMoments) {
                     float cost = CostHeuristic.EvaluatePerPixel(candidate.NumLightPaths,
                         candidate.NumConnections, (candidate.Merge ? 1.0f : 0.0f));
                     Debug.Assert(float.IsFinite(cost));
                     Debug.Assert(cost > 0);
 
-                    float workNorm = moment.Query(col, row) * cost;
+                    float workNorm = moment.GetPixel(col, row) * cost;
 
                     if (workNorm < bestWorkNorm) {
                         bestWorkNorm = workNorm;
@@ -186,7 +184,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     }
                 }
 
-                float mean = denoisedImage.Query(col, row);
+                float mean = denoisedImage.GetPixel(col, row);
                 if (mean == 0.0f) continue; // skip completely black pixels
                 float recipMeanSquare = 1.0f / (mean * mean);
 
@@ -204,7 +202,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     if (UsePerPixelConnections) g.NumConnections = 0;
 
                     // Accumulate in the per-line storage
-                    lineBuffers.RelMoments[g] += moment.Query(col, row) * recipMeanSquare * recipNumPixels;
+                    lineBuffers.RelMoments[g] += moment.GetPixel(col, row) * recipNumPixels;
                     lineBuffers.Costs[g] += CostHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections,
                         c.Merge ? 1 : 0) * recipNumPixels; // normalized to get "nicer" numbers (does not impact the result)
                 }
@@ -262,16 +260,23 @@ class AdaptiveVcm : MomentEstimatingVcm {
         if (iteration == 0) {
             DenoiseBuffers.Denoise();
             var img = Scene.FrameBuffer.GetLayer("denoised").Image as RgbImage;
+            denoisedImage = new(img, MonochromeImage.RgbConvertMode.Average);
 
-            // Apply the same filtering as for the second moments. Otherwise, discontinuities between very
-            // bright and very dark regions will mess up the result.
-            denoisedImage = new FilterType(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height, tileSize);
-            for (int row = 0; row < Scene.FrameBuffer.Height; ++row) {
-                for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
-                    denoisedImage.AtomicAdd(col, row, img.GetPixel(col, row).Average);
+            // Make the current absolute moments of the first iteration relative
+            foreach (var (c, moment) in momentImages) {
+                for (int row = 0; row < Scene.FrameBuffer.Height; ++row) {
+                    for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
+                        float mean = img.GetPixel(col, row).Average;
+                        if (mean == 0) continue;
+                        moment.SetPixel(col, row, moment.GetPixel(col, row) / (mean * mean));
+                    }
                 }
             }
-            denoisedImage.Prepare();
+        }
+
+        // Reduce noise in the second moments via a simple lowpass filter
+        foreach (var (candidate, moment) in momentImages) {
+            Filter.RepeatedBox(moment, filteredMoments[candidate], 16);
         }
 
         OptimizePerPixel();
@@ -289,8 +294,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
         if (WriteMomentImages) {
             var layers = new (string, ImageBase)[momentImages.Count];
             int i = 0;
-            foreach (var (c, img) in momentImages) {
-                layers[i++] = (c.ToString(), img.ToImage());
+            foreach (var (c, img) in filteredMoments) {
+                layers[i++] = (c.ToString(), img);
             }
             Layers.WriteToExr(Scene.FrameBuffer.Basename + "Moments.exr", layers);
         }
@@ -308,6 +313,11 @@ class AdaptiveVcm : MomentEstimatingVcm {
                                            ProxyWeights proxyWeights, Vector2 pixel) {
         // We compute the second moment of the average value across all color channels.
         float w2 = weight.Average * weight.Average * kernelWeight / Scene.FrameBuffer.CurIteration;
+
+        if (denoisedImage != null) { // Compute relative moments if we have a denoised reference
+            float mean = denoisedImage.GetPixel((int)pixel.X, (int)pixel.Y);
+            if (mean != 0) w2 /= mean * mean;
+        }
 
         // Precompute terms where possible
         float lt = proxyWeights.LightTracing / NumLightPathsProxyStrategy;

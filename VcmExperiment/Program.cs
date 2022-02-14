@@ -3,39 +3,55 @@ using EfficiencyAwareMIS.VcmExperiment;
 // TODO move scenes into this repository
 SceneRegistry.AddSource("../../GuidingExperiments/Scenes");
 
-Benchmark benchmark = new(new GroundTruthExperiment(), new() {
+List<(string, int)> scenes = new() {
     // Most interesting
 
-    SceneRegistry.LoadScene("HotLivingMod", maxDepth: 10),
-    SceneRegistry.LoadScene("VeachBidir", maxDepth: 5),
-    SceneRegistry.LoadScene("TargetPractice", maxDepth: 5),
-    SceneRegistry.LoadScene("ModernLivingRoom", maxDepth: 10),
-    SceneRegistry.LoadScene("Pool", maxDepth: 5, minDepth: 1),
-    SceneRegistry.LoadScene("HomeOffice", maxDepth: 5, minDepth: 1),
-    SceneRegistry.LoadScene("House", maxDepth: 5, minDepth: 1),
-    SceneRegistry.LoadScene("LowPoly", maxDepth: 5, minDepth: 1),
-    SceneRegistry.LoadScene("LampCaustic", maxDepth: 10, minDepth: 1),
-    SceneRegistry.LoadScene("RoughGlasses", maxDepth: 10, minDepth: 1),
-    SceneRegistry.LoadScene("RoughGlassesIndirect", maxDepth: 10, minDepth: 1),
-    SceneRegistry.LoadScene("CountryKitchen", maxDepth: 5, minDepth: 1),
-    SceneRegistry.LoadScene("Bedroom", maxDepth: 5, minDepth: 1),
-    SceneRegistry.LoadScene("LampCausticNoShade", maxDepth: 10, minDepth: 1),
+    ("HotLivingMod", 10),
+    ("VeachBidir", 5),
+    ("TargetPractice", 5),
+    ("ModernLivingRoom", 10),
+    ("Pool", 5),
+    ("HomeOffice", 5),
+    ("House", 5),
+    ("LowPoly", 5),
+    ("LampCaustic", 10),
+    ("RoughGlasses", 10),
+    ("RoughGlassesIndirect", 10),
+    ("CountryKitchen", 5),
+    ("Bedroom", 5),
+    ("LampCausticNoShade", 10),
 
     // Other scenes
-    // SceneRegistry.LoadScene("GlassOfWater", maxDepth: 10, minDepth: 1),
-    // SceneRegistry.LoadScene("Lamp", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("ModernHall", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("ReverseCornellBox", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("SpongeScene", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("RoughNoGlasses", maxDepth: 10, minDepth: 1),
-    // SceneRegistry.LoadScene("Bathroom2", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("DiningRoom", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("LivingRoom2", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("Sponza", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("Staircase", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("VeachAjar", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("BoxLargeLight", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("Footprint", maxDepth: 5, minDepth: 1),
-    // SceneRegistry.LoadScene("Garage", maxDepth: 5, minDepth: 1),
-}, "Results", 640, 480, computeErrorMetrics: true);
-benchmark.Run();
+    // ("GlassOfWater", 10),
+    // ("Lamp", 5),
+    // ("ModernHall", 5),
+    // ("ReverseCornellBox", 5),
+    // ("SpongeScene", 5),
+    // ("RoughNoGlasses", 10),
+    // ("Bathroom2", 5),
+    // ("DiningRoom", 5),
+    // ("LivingRoom2", 5),
+    // ("Sponza", 5),
+    // ("Staircase", 5),
+    // ("VeachAjar", 5),
+    // ("BoxLargeLight", 5),
+    // ("Footprint", 5),
+    // ("Garage", 5),
+};
+
+List<SceneConfig> sceneConfigs = new();
+foreach(var (name, maxDepth) in scenes)
+    sceneConfigs.Add(SceneRegistry.LoadScene(name, maxDepth: maxDepth));
+
+new Benchmark(
+    new GroundTruthExperiment(),
+    sceneConfigs,
+    "Results",
+    640,
+    480,
+    computeErrorMetrics: true
+).Run();
+
+// TODO generate overview of equal-time error values and decisions
+
+// TODO validate the global decisions via ground truth render time and relMSE
