@@ -8,12 +8,12 @@ class AdaptiveVcm : MomentEstimatingVcm {
     /// <summary>
     /// Candidates for the number of light subpaths, as a fraction of the number of pixels.
     /// </summary>
-    public float[] NumLightPathCandidates = new[] { 0.25f, 0.5f, 0.75f, 1.0f, 2.0f };
+    public float[] NumLightPathCandidates = new[] { /*0.25f,*/ 0.5f, /*0.75f,*/ 1.0f, 2.0f };
 
     /// <summary>
     /// Candidates for the number of bidirectional connections per camera subpath vertex
     /// </summary>
-    public int[] NumConnectionsCandidates = new[] { 0, 1, 2, 4, 8, 16 };
+    public int[] NumConnectionsCandidates = new[] { 0, /*1, 2,*/ 4, 8, 16 };
 
     /// <summary>
     /// If set to true, writes all candidate moment images to a layered .exr file after rendering is done.
@@ -179,6 +179,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
         // Accumulate relative moments and cost, using a parallel reduction with per-line buffering
         float recipNumPixels = 1.0f / (Scene.FrameBuffer.Width * Scene.FrameBuffer.Height);
+        int numOutliers = 0;
         Parallel.For(0, Scene.FrameBuffer.Height, row => {
             // Allocate a buffer for this line (TODO could be made thread-local and re-use the memory)
             var lineBuffers = MakeBuffers();
@@ -218,6 +219,14 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     var relMoment = moment.GetPixel(col, row);
                     var cost = CostHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, c.Merge ? 1 : 0);
 
+                    // Very simple outlier removal. Without this, a single firefly pixel can completely
+                    // change the result. A hard-coded constant works, because we consider only the _relative_
+                    // moments. In a practical application, you may want to use something more elaborate.
+                    if (relMoment > 1e5) {
+                        relMoment = 1.0f;
+                        Interlocked.Increment(ref numOutliers);
+                    }
+
                     // Accumulate in the per-line storage. We scale by the number of pixels to get resolution
                     // independent values that are easier to interpret when debugging. Has no effect on the
                     // outcome since recipNumPixels is a constant.
@@ -243,6 +252,10 @@ class AdaptiveVcm : MomentEstimatingVcm {
             }
         });
 
+        if (numOutliers > Scene.FrameBuffer.Width * Scene.FrameBuffer.Height * 0.01) {
+            Logger.Warning($"Rejected {numOutliers} outliers, which is more than 1% of all pixels.");
+        }
+
         // Find the best candidate in a simple linear search
         float bestWorkNorm = float.MaxValue;
         Candidate bestCandidate = new();
@@ -256,7 +269,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
         }
 
         Scene.FrameBuffer.MetaData["PerImageDecision"] = bestCandidate;
-        Console.WriteLine(bestCandidate);
+        Console.WriteLine(bestCandidate); // TODO proper logging of the history in a list
 
         NumLightPaths = bestCandidate.NumLightPaths;
         if (!UsePerPixelConnections) NumConnections = bestCandidate.NumConnections;
