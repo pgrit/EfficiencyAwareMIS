@@ -45,6 +45,12 @@ class AdaptiveVcm : MomentEstimatingVcm {
     Dictionary<Candidate, MonochromeImage> filteredMoments;
     MonochromeImage denoisedImage;
 
+    /// <summary>
+    /// Debugging visualization of the per-pixel masked global decisions. Only written if
+    /// <see cref="WriteMomentImages" /> is true.
+    /// </summary>
+    Dictionary<Candidate, MonochromeImage> marginalizedMoments = null;
+
     MonochromeImage mergeMask, connectMask;
 
     bool? useMergesGlobal;
@@ -163,6 +169,14 @@ class AdaptiveVcm : MomentEstimatingVcm {
     void OptimizePerImage() {
         var (relMoments, costs) = MakeBuffers();
 
+        // Create buffers to store the per-pixel marginalized values of the global candidates for debugging
+        if (WriteMomentImages && marginalizedMoments == null) {
+            marginalizedMoments = new();
+            foreach (var (candidate, _) in relMoments) {
+                marginalizedMoments.Add(candidate, new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height));
+            }
+        }
+
         // Accumulate relative moments and cost, using a parallel reduction with per-line buffering
         float recipNumPixels = 1.0f / (Scene.FrameBuffer.Width * Scene.FrameBuffer.Height);
         Parallel.For(0, Scene.FrameBuffer.Height, row => {
@@ -201,10 +215,21 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     if (UsePerPixelMerges) g.Merge = false;
                     if (UsePerPixelConnections) g.NumConnections = 0;
 
-                    // Accumulate in the per-line storage
-                    lineBuffers.RelMoments[g] += moment.GetPixel(col, row) * recipNumPixels;
-                    lineBuffers.Costs[g] += CostHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections,
-                        c.Merge ? 1 : 0) * recipNumPixels; // normalized to get "nicer" numbers (does not impact the result)
+                    var relMoment = moment.GetPixel(col, row);
+                    var cost = CostHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, c.Merge ? 1 : 0);
+
+                    // Accumulate in the per-line storage. We scale by the number of pixels to get resolution
+                    // independent values that are easier to interpret when debugging. Has no effect on the
+                    // outcome since recipNumPixels is a constant.
+                    lineBuffers.RelMoments[g] += relMoment * recipNumPixels;
+                    lineBuffers.Costs[g] += cost * recipNumPixels;
+
+                    // If the debugging buffers exist, track the last marginalized per-pixel value in them.
+                    // We use "SetPixel", i.e. overwrite instead of accumulate, to not distort the values.
+                    // Intermediate states are currently not kept, only the last outcome.
+                    if (marginalizedMoments != null) {
+                        marginalizedMoments[g].SetPixel(col, row, relMoment * cost);
+                    }
                 }
             }
 
@@ -292,10 +317,17 @@ class AdaptiveVcm : MomentEstimatingVcm {
         base.OnAfterRender();
 
         if (WriteMomentImages) {
-            var layers = new (string, ImageBase)[momentImages.Count];
+            var layers = new (string, ImageBase)[filteredMoments.Count + marginalizedMoments.Count];
             int i = 0;
             foreach (var (c, img) in filteredMoments) {
+                // Multiply the cost heuristic on all pixel moments (this pollutes the values, but rendering
+                // is done already)
+                var cost = CostHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, (c.Merge ? 1.0f : 0.0f));
+                img.Scale(cost);
                 layers[i++] = (c.ToString(), img);
+            }
+            foreach (var (c, img) in marginalizedMoments) {
+                layers[i++] = ($"global-{c.ToString()}", img);
             }
             Layers.WriteToExr(Scene.FrameBuffer.Basename + "Moments.exr", layers);
         }
