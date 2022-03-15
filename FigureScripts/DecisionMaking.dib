@@ -1,0 +1,98 @@
+#!fsharp
+
+// Downloads the plotting dependency from nuget.org (see https://plotly.net)
+#r "nuget: Plotly.NET, 2.0.0-preview.17"
+#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.17"
+#r "../../SimpleImageIO/SimpleImageIO/bin/Release/net5.0/SimpleImageIO.dll"
+open Plotly.NET // The F# equivalent of a C# "using" or a C++ "using namespace"
+open System.Numerics // for 2D vector arithmetic
+open System.Text.Json.Serialization
+open System.Text.Json
+open System.Collections.Generic
+let rng = System.Random()
+
+#!markdown
+
+Read the global cost history from the rendering meta data.
+
+#!fsharp
+
+let sceneDir = "../VcmExperiment/Results/LampCaustic/OurDecisionCorrelAware/"
+
+#!fsharp
+
+let json = File.ReadAllText(sceneDir + "Render.json")
+let doc = JsonDocument.Parse(json)
+let history = doc.RootElement.GetProperty("GlobalCandidateHistory")
+let relMomentsElem = history[history.GetArrayLength() - 1].GetProperty("RelativeMoment")
+let costsElem = history[history.GetArrayLength() - 1].GetProperty("Cost")
+let relMoments = JsonSerializer.Deserialize<Dictionary<string, float>>(relMomentsElem)
+let costs = JsonSerializer.Deserialize<Dictionary<string, float>>(costsElem)
+
+#!markdown
+
+Plot the global marginalized costs
+
+#!fsharp
+
+let extractNum (str:string) = 
+    let numStr = str.Split(',')[0]
+    string(int(numStr.Split('=')[1]))
+
+#!fsharp
+
+[ for m in relMoments do
+    let cost = costs[m.Key]
+    extractNum(m.Key), m.Value * cost
+] 
+|> List.sort
+|> Chart.Column
+|> Chart.withYAxis(LayoutObjects.LinearAxis.init(AxisType=StyleParam.AxisType.Log))
+|> Chart.withMarginSize(0, 0, 0, 0)
+|> Chart.withSize(800, 200)
+
+#!markdown
+
+Read the second moment images and apply color mapping to them.
+
+#!fsharp
+
+System.IO.Directory.EnumerateFiles(sceneDir)
+
+#!fsharp
+
+let layers = SimpleImageIO.Layers.LoadFromFile(sceneDir + "RenderMoments.exr")
+let globalImages = [ for l in layers do if l.Key.Contains("global") then extractNum(l.Key), l.Value ]
+let momentImages = [ for l in layers do if not(l.Key.Contains("global")) then l.Key, l.Value ]
+
+#!fsharp
+
+let falseColorMap = SimpleImageIO.FalseColor(SimpleImageIO.LinearColormap(0.0f, 100.0f))
+let globalFalseColor = [ for key, img in globalImages -> key, falseColorMap.Apply(img) ]
+let momentFalseColor = [ for key, img in momentImages -> key, falseColorMap.Apply(img) ]
+
+#!fsharp
+
+System.IO.Directory.CreateDirectory("../Figures")
+for key, img in globalFalseColor do img.WriteToFile($"../Figures/{key}.png")
+for key, img in momentFalseColor do img.WriteToFile($"../Figures/{key}.png")
+
+#!fsharp
+
+[ for key, img in globalFalseColor -> key, HTML($"<img src='data:image/png;base64,{img.AsBase64Png()}' />") ]
+
+#!fsharp
+
+[ for key, img in momentFalseColor -> key, HTML($"<img src='data:image/png;base64,{img.AsBase64Png()}' />") ]
+
+#!markdown
+
+Generate false color images for the connection mask
+
+#!fsharp
+
+let mask = SimpleImageIO.Layers.LoadFromFile(sceneDir + "RenderMasks.exr")["connect"]
+let falseColorMap = SimpleImageIO.FalseColor(SimpleImageIO.LinearColormap(0.0f, 16.0f))
+let img = falseColorMap.Apply(mask)
+img.WriteToFile("../Figures/connect.png")
+HTML($"<img src='data:image/png;base64,{img.AsBase64Png()}' />")

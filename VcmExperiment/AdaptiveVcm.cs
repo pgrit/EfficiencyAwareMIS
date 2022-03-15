@@ -4,7 +4,7 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// Adapts the number of light paths and number of connections during rendering, and disables merging on
 /// a per-pixel basis.
 /// </summary>
-class AdaptiveVcm : MomentEstimatingVcm {
+class AdaptiveVcm : VarianceEstimatingVcm {
     /// <summary>
     /// Candidates for the number of light subpaths, as a fraction of the number of pixels.
     /// </summary>
@@ -16,9 +16,10 @@ class AdaptiveVcm : MomentEstimatingVcm {
     public int[] NumConnectionsCandidates = new[] { 0, /*1, 2,*/ 4, 8, 16 };
 
     /// <summary>
-    /// If set to true, writes all candidate moment images to a layered .exr file after rendering is done.
+    /// If set to true, writes all candidate moment images to a layered .exr file after rendering is done,
+    /// generates and writes images of global marginalized quantities, and outputs history of global values.
     /// </summary>
-    public bool WriteMomentImages = false;
+    public bool WriteDebugInfo = false;
 
     /// <summary>
     /// If set to false, connections are optimized over the whole image instead of per-pixel
@@ -29,6 +30,13 @@ class AdaptiveVcm : MomentEstimatingVcm {
     /// If set to false, merges are optimized over the whole image instead of per-pixel
     /// </summary>
     public bool UsePerPixelMerges = true;
+
+    /// <summary>
+    /// If set to true, estimates the covariance of merges and connections / next event with more than one
+    /// shadow ray. This is expensive, because it introduces two values per pixel, technique, and path length.
+    /// Only works if merges / multiple connections are actually used.
+    /// </summary>
+    public bool EstimateCovariances = false;
 
     /// <summary>
     /// Maximum number of iterations after which to update the sample counts
@@ -47,11 +55,17 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
     /// <summary>
     /// Debugging visualization of the per-pixel masked global decisions. Only written if
-    /// <see cref="WriteMomentImages" /> is true.
+    /// <see cref="WriteDebugInfo" /> is true.
     /// </summary>
     Dictionary<Candidate, MonochromeImage> marginalizedMoments = null;
 
     MonochromeImage mergeMask, connectMask;
+
+    /// <summary>
+    /// For each technique with correlated samples, stores the sum of squares, square of sum, and mean
+    /// values so we can compute covariance and squared mean.
+    /// </summary>
+    Dictionary<TechIndex, RgbImage> covarianceImages = null;
 
     bool? useMergesGlobal;
 
@@ -85,6 +99,19 @@ class AdaptiveVcm : MomentEstimatingVcm {
         }
         momentImages.Add(new(0, 0, false), new MonochromeImage(width, height));
         filteredMoments.Add(new(0, 0, false), new MonochromeImage(width, height));
+
+        // Covariances are estimated for all techniques that could be correlated, up to a maximum path length.
+        if (EstimateCovariances) {
+            covarianceImages = new();
+            for (int pathLen = 2; pathLen <= MaxDepth; ++pathLen) {
+                for (int i = 1; i < pathLen; ++i) {
+                    TechIndex connect = new(i, pathLen - i - 1, pathLen);
+                    TechIndex merge = new(i, pathLen - i, pathLen);
+                    covarianceImages.Add(connect, new(width, height));
+                    covarianceImages.Add(merge, new(width, height));
+                }
+            }
+        }
     }
 
     void OptimizePerPixel() {
@@ -170,7 +197,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
         var (relMoments, costs) = MakeBuffers();
 
         // Create buffers to store the per-pixel marginalized values of the global candidates for debugging
-        if (WriteMomentImages && marginalizedMoments == null) {
+        if (WriteDebugInfo && marginalizedMoments == null) {
             marginalizedMoments = new();
             foreach (var (candidate, _) in relMoments) {
                 marginalizedMoments.Add(candidate, new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height));
@@ -268,6 +295,25 @@ class AdaptiveVcm : MomentEstimatingVcm {
             }
         }
 
+        // Keep track of the history of candidate values in the frame buffer
+        if (WriteDebugInfo) {
+            if (!Scene.FrameBuffer.MetaData.ContainsKey("GlobalCandidateHistory")) {
+                Scene.FrameBuffer.MetaData["GlobalCandidateHistory"] =
+                    new List<Dictionary<string, Dictionary<string, float>>>();
+            }
+            // Copy in a dictionary with a string key so it can be serialized
+            Dictionary<string, float> relMomentSerialized = new();
+            Dictionary<string, float> costSerialized = new();
+            foreach (var (c, m) in relMoments) {
+                relMomentSerialized[c.ToString()] = m;
+                costSerialized[c.ToString()] = costs[c];
+            }
+            Scene.FrameBuffer.MetaData["GlobalCandidateHistory"].Add(new Dictionary<string, Dictionary<string, float>>() {
+                {"RelativeMoment", relMomentSerialized},
+                {"Cost", costSerialized }
+            });
+        }
+
         Scene.FrameBuffer.MetaData["PerImageDecision"] = bestCandidate;
         Console.WriteLine(bestCandidate); // TODO proper logging of the history in a list
 
@@ -329,7 +375,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
     protected override void OnAfterRender() {
         base.OnAfterRender();
 
-        if (WriteMomentImages) {
+        if (WriteDebugInfo) {
             var layers = new (string, ImageBase)[filteredMoments.Count + marginalizedMoments.Count];
             int i = 0;
             foreach (var (c, img) in filteredMoments) {
@@ -354,8 +400,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
     protected override bool UpdateEstimates => Scene.FrameBuffer.CurIteration <= MaxNumUpdates;
 
-    protected override void OnMomentSample(RgbColor weight, float kernelWeight, int pathLength,
-                                           ProxyWeights proxyWeights, Vector2 pixel) {
+    protected override void OnVarianceSample(RgbColor weight, float kernelWeight, TechIndex techIndex,
+                                             ProxyWeights proxyWeights, Vector2 pixel) {
         // We compute the second moment of the average value across all color channels.
         float w2 = weight.Average * weight.Average * kernelWeight / Scene.FrameBuffer.CurIteration;
 

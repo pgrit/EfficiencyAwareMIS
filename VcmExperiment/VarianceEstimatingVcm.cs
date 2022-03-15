@@ -4,10 +4,10 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// Base class for a VCM integrator that computes estimates of the second moments of different MIS strategies.<br/>
 ///
 /// For each sample of each technique, the MIS weights of the proxy strategy are computed, and a virtual
-/// method is invoked. Derived classes can implement the <see cref="OnMomentSample" /> method to estimate the
+/// method is invoked. Derived classes can implement the <see cref="OnVarianceSample" /> method to estimate the
 /// desired moments or derivatives from the pre-computed data.
 /// </summary>
-public class MomentEstimatingVcm : PathLengthEstimatingVcm {
+public class VarianceEstimatingVcm : PathLengthEstimatingVcm {
     /// <summary>
     /// Product of selection probability and sample count for connections in the proxy strategy.
     /// The probability depends on the actual number of light subpath vertices, which we cannot know.
@@ -73,6 +73,11 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
     }
 
     /// <summary>
+    /// Identifies a sampling technique in VCM.
+    /// </summary>
+    protected record struct TechIndex(int CameraEdges, int LightEdges, int TotalEdges);
+
+    /// <summary>
     /// Called for each sample of each technique. Derived class should estimate the desired moments or
     /// derivatives.
     /// </summary>
@@ -81,8 +86,8 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
     /// <param name="pathLength">Number of edges along the path</param>
     /// <param name="proxyWeights">MIS weights of the proxy strategy</param>
     /// <param name="pixel">The pixel this path contributes to</param>
-    protected virtual void OnMomentSample(RgbColor weight, float kernelWeight, int pathLength,
-                                          ProxyWeights proxyWeights, Vector2 pixel) { }
+    protected virtual void OnVarianceSample(RgbColor weight, float kernelWeight, TechIndex techIndex,
+                                            ProxyWeights proxyWeights, Vector2 pixel) { }
 
     /// <summary>
     /// Computes the MIS weights of the proxy strategy, from which we compute the correction factors for all
@@ -189,7 +194,7 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Compute the hypothetical PT weight: the combined weight of hitting and next event
         float radius = ComputeLocalMergeRadius(distToCam);
         var proxyWeights = ComputeProxyWeights(pathPdfs, pixel, distToCam, radius);
-        OnMomentSample(weight * misWeight, 1, numPdfs, proxyWeights, pixel);
+        OnVarianceSample(weight * misWeight, 1, new(0, lightVertex.Depth, numPdfs), proxyWeights, pixel);
     }
 
     protected override void OnNextEventSample(RgbColor weight, float misWeight, CameraPath cameraPath,
@@ -221,7 +226,8 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Compute the hypothetical PT weight: the combined weight of hitting and next event
         float radius = ComputeLocalMergeRadius(cameraPath.Distances[0]);
         var proxyWeights = ComputeProxyWeights(pathPdfs, cameraPath.Pixel, cameraPath.Distances[0], radius);
-        OnMomentSample(weight * misWeight, 1, numPdfs, proxyWeights, cameraPath.Pixel);
+        OnVarianceSample(weight * misWeight, 1, new(cameraPath.Vertices.Count, 0, numPdfs), proxyWeights,
+            cameraPath.Pixel);
     }
 
     protected override void OnEmitterHitSample(RgbColor weight, float misWeight, CameraPath cameraPath,
@@ -250,7 +256,7 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Compute the hypothetical PT weight: the combined weight of hitting and next event
         float radius = ComputeLocalMergeRadius(cameraPath.Distances[0]);
         var proxyWeights = ComputeProxyWeights(pathPdfs, cameraPath.Pixel, cameraPath.Distances[0], radius);
-        OnMomentSample(weight * misWeight, 1, numPdfs, proxyWeights, cameraPath.Pixel);
+        OnVarianceSample(weight * misWeight, 1, new(numPdfs, 0, numPdfs), proxyWeights, cameraPath.Pixel);
     }
 
     protected override void OnBidirConnectSample(RgbColor weight, float misWeight, CameraPath cameraPath,
@@ -280,7 +286,8 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Compute the hypothetical PT weight (next event + hitting)
         float radius = ComputeLocalMergeRadius(cameraPath.Distances[0]);
         var proxyWeights = ComputeProxyWeights(pathPdfs, cameraPath.Pixel, cameraPath.Distances[0], radius);
-        OnMomentSample(weight * misWeight, 1, numPdfs, proxyWeights, cameraPath.Pixel);
+        OnVarianceSample(weight * misWeight, 1, new(cameraPath.Vertices.Count, lightVertex.Depth, numPdfs),
+            proxyWeights, cameraPath.Pixel);
     }
 
     protected override void OnMergeSample(RgbColor weight, float kernelWeight, float misWeight,
@@ -311,6 +318,7 @@ public class MomentEstimatingVcm : PathLengthEstimatingVcm {
         // Compute the hypothetical PT weight (next event + hitting)
         float radius = ComputeLocalMergeRadius(cameraPath.Distances[0]);
         var proxyWeights = ComputeProxyWeights(pathPdfs, cameraPath.Pixel, cameraPath.Distances[0], radius);
-        OnMomentSample(weight * misWeight, kernelWeight, numPdfs, proxyWeights, cameraPath.Pixel);
+        OnVarianceSample(weight * misWeight, kernelWeight, new(cameraPath.Vertices.Count, lightVertex.Depth, numPdfs),
+            proxyWeights, cameraPath.Pixel);
     }
 }

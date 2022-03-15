@@ -16,6 +16,8 @@ The less interesting MIS computations and statistics gathering code are distribu
 - [PathLengthEstimatingVcm](VcmExperiment/PathLengthEstimatingVcm.cs) contains the code to compute average path lengths and photon count statistics.
 - [MomentEstimatingVcm](VcmExperiment/MomentEstimatingVcm.cs) computes the MIS weights of the proxy strategy and invokes an abstract method for each sample.
 
+**TODO** point out how the different pieces of the pseudo code relate to code in this repo
+
 ### Cost heuristic
 
 The cost heuristic is defined in [CostHeuristic.cs](VcmExperiment/CostHeuristic.cs).

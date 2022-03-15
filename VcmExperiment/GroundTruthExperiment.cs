@@ -9,11 +9,11 @@ class GroundTruthExperiment : Experiment {
         List<Method> methods = new() {
             new("OurDecisionCorrelAware", new AdaptiveVcm() {
                 DisableCorrelAware = false,
-                NumIterations = 2,
-                MaxNumUpdates = 2,
-                NumConnections = 1,
-                EnableMerging = true,
-                WriteMomentImages = true,
+                NumIterations = 10,
+                MaxNumUpdates = 10,
+                NumConnections = 4,
+                EnableMerging = false,
+                WriteDebugInfo = true,
                 // UsePerPixelConnections = false,
                 // UsePerPixelMerges = false,
             }),

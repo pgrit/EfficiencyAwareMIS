@@ -10,6 +10,7 @@ __pycache__
 # Generated results
 */Results/*
 */Results*/*
+/Figures/*
 
 # Debugging stuff
 log
