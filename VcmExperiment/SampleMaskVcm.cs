@@ -65,6 +65,10 @@ public class SampleMaskVcm : CorrelAwareVcm {
         return num;
     }
 
+    protected virtual void OnCombinedConnectSample(int numSamples, RgbColor throughput, RgbColor combinedEstimate) {
+        // TODO figure out how this could be used...
+    }
+
     /// <inheritdoc />
     protected override RgbColor OnCameraHit(CameraPath path, RNG rng, Ray ray, SurfacePoint hit,
                                             float pdfFromAncestor, RgbColor throughput, int depth,
@@ -80,9 +84,12 @@ public class SampleMaskVcm : CorrelAwareVcm {
         // Perform connections if the maximum depth has not yet been reached
         if (depth < MaxDepth) {
             int numConnect = StochasticRound(rng, GetPerPixelConnectionCount(path.Pixel));
-            for (int i = 0; i < numConnect; ++i) {
-                value += throughput * BidirConnections(hit, -ray.Direction, rng, path, toAncestorJacobian);
-            }
+            RgbColor connectContrib = RgbColor.Black;
+            for (int i = 0; i < numConnect; ++i)
+                connectContrib += BidirConnections(hit, -ray.Direction, rng, path, toAncestorJacobian);
+            value += throughput * connectContrib;
+            OnCombinedConnectSample(numConnect, throughput, connectContrib);
+
             value += throughput * PerformMerging(ray, hit, rng, path, toAncestorJacobian);
         }
 
