@@ -36,6 +36,34 @@ class AdaptiveVcm : MomentEstimatingVcm {
     /// </summary>
     public int MaxNumUpdates = 1;
 
+    /// <summary>
+    /// Filters the per-pixel moments to reduce noise
+    /// </summary>
+    /// <param name="input">The unfiltered per-pixel moments. Must not be written to.</param>
+    /// <param name="filtered">Pre-allocated memory for the filtered result</param>
+    public virtual void FilterMoments(MonochromeImage input, MonochromeImage filtered)
+    => Filter.RepeatedBox(input, filtered, 16);
+
+    /// <summary>
+    /// Filters the per-pixel merging decisions and writes the result to the same mask.
+    /// </summary>
+    /// <param name="mask">Input / Output merge mask</param>
+    public virtual void FilterMergeMask(ref MonochromeImage mask) {
+        MonochromeImage buf = new(mask.Width, mask.Height);
+        Filter.Dilation(mask, buf, 8);
+        Filter.RepeatedBox(buf, mask, 16);
+    }
+
+    /// <summary>
+    /// Filters the per-pixel connection counts and writes the result to the same mask.
+    /// </summary>
+    /// <param name="mask">Input / Output connection mask</param>
+    public virtual void FilterConnectMask(ref MonochromeImage mask) {
+        MonochromeImage buf = new(mask.Width, mask.Height);
+        Filter.Dilation(mask, buf, 3);
+        Filter.RepeatedBox(buf, mask, 16);
+    }
+
     record struct Candidate(int NumLightPaths, int NumConnections, bool Merge) {
         public override string ToString() => $"n={NumLightPaths:000000},c={NumConnections:00},m={(Merge ? 1 : 0)}";
     }
@@ -51,6 +79,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
     /// <see cref="WriteDebugInfo" /> is true.
     /// </summary>
     Dictionary<Candidate, MonochromeImage> marginalizedMoments = null;
+
+    Dictionary<Candidate, MonochromeImage> marginalizedCosts = null;
 
     MonochromeImage mergeMask, connectMask;
 
@@ -71,29 +101,35 @@ class AdaptiveVcm : MomentEstimatingVcm {
         int width = Scene.FrameBuffer.Width;
         int height = Scene.FrameBuffer.Height;
         int numPixels = Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
+
         momentImages = new();
         filteredMoments = new();
+
+        // Allocates all requred buffers for a candidate
+        void AddCandidate(Candidate candidate) {
+            momentImages.Add(candidate, new MonochromeImage(width, height));
+            filteredMoments.Add(candidate, new MonochromeImage(width, height));
+        }
+
+        // All combinations of connection counts and numbers of light paths
         foreach (float nRel in NumLightPathCandidates) {
             foreach (int c in NumConnectionsCandidates) {
                 int n = (int)(numPixels * nRel);
-                if (EnableMerging) {
-                    momentImages.Add(new(n, c, true), new MonochromeImage(width, height));
-                    filteredMoments.Add(new(n, c, true), new MonochromeImage(width, height));
-                }
-                momentImages.Add(new(n, c, false), new MonochromeImage(width, height));
-                filteredMoments.Add(new(n, c, false), new MonochromeImage(width, height));
+                if (EnableMerging) AddCandidate(new(n, c, true));
+                AddCandidate(new(n, c, false));
             }
         }
-        momentImages.Add(new(0, 0, false), new MonochromeImage(width, height));
-        filteredMoments.Add(new(0, 0, false), new MonochromeImage(width, height));
+
+        // Pure path tracer: 0 light paths are only allowed if merges and connections are also disabled
+        AddCandidate(new(0, 0, false));
     }
 
     void OptimizePerPixel() {
-        // Make per-pixel decisions
         if (UsePerPixelMerges) mergeMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
         if (UsePerPixelConnections) connectMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
         Parallel.For(0, Scene.FrameBuffer.Height, row => {
             for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
+                // Search best full candidate in this pixel
                 float bestWorkNorm = float.MaxValue;
                 Candidate bestCandidate = new();
                 foreach (var (candidate, moment) in filteredMoments) {
@@ -114,24 +150,16 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     bestCandidate = new(0, 0, false);
                 }
 
-                // Set the per-pixel decision
+                // Extract the per-pixel components from the best candidate
                 if (UsePerPixelMerges) mergeMask.SetPixel(col, row, bestCandidate.Merge ? 1 : 0);
                 if (UsePerPixelConnections) connectMask.SetPixel(col, row, bestCandidate.NumConnections);
             }
         });
 
-        // Filter the sample masks
-        if (UsePerPixelMerges) {
-            MonochromeImage mergeMaskBuf = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
-            Filter.Dilation(mergeMask, mergeMaskBuf, 16);
-            Filter.RepeatedBox(mergeMaskBuf, mergeMask, 8);
-        }
-
-        if (UsePerPixelConnections) {
-            MonochromeImage connectMaskBuf = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
-            Filter.Dilation(connectMask, connectMaskBuf, 16);
-            Filter.RepeatedBox(connectMaskBuf, connectMask, 8);
-        }
+        // Filtering the results prevents artifacts from single pixels / groups of pixels making bad decisions
+        // based on noisy or missing data.
+        if (UsePerPixelMerges) FilterMergeMask(ref mergeMask);
+        if (UsePerPixelConnections) FilterConnectMask(ref connectMask);
     }
 
     /// <summary>
@@ -173,8 +201,10 @@ class AdaptiveVcm : MomentEstimatingVcm {
         // Create buffers to store the per-pixel marginalized values of the global candidates for debugging
         if (WriteDebugInfo && marginalizedMoments == null) {
             marginalizedMoments = new();
+            marginalizedCosts = new();
             foreach (var (candidate, _) in relMoments) {
                 marginalizedMoments.Add(candidate, new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height));
+                marginalizedCosts.Add(candidate, new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height));
             }
         }
 
@@ -223,10 +253,10 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     // Very simple outlier removal. Without this, a single firefly pixel can completely
                     // change the result. A hard-coded constant works, because we consider only the _relative_
                     // moments. In a practical application, you may want to use something more elaborate.
-                    if (relMoment > 1e5) {
-                        relMoment = 1.0f;
-                        Interlocked.Increment(ref numOutliers);
-                    }
+                    // if (relMoment > 1e7) {
+                    //     relMoment = 1.0f;
+                    //     Interlocked.Increment(ref numOutliers);
+                    // }
 
                     // Accumulate in the per-line storage. We scale by the number of pixels to get resolution
                     // independent values that are easier to interpret when debugging. Has no effect on the
@@ -237,9 +267,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     // If the debugging buffers exist, track the last marginalized per-pixel value in them.
                     // We use "SetPixel", i.e. overwrite instead of accumulate, to not distort the values.
                     // Intermediate states are currently not kept, only the last outcome.
-                    if (marginalizedMoments != null) {
-                        marginalizedMoments[g].SetPixel(col, row, relMoment * cost);
-                    }
+                    marginalizedMoments?[g]?.SetPixel(col, row, relMoment);
+                    marginalizedCosts?[g]?.SetPixel(col, row, cost);
                 }
             }
 
@@ -300,8 +329,11 @@ class AdaptiveVcm : MomentEstimatingVcm {
         base.OnStartIteration(iteration);
 
         if (iteration == 0) InitCandidates();
-        else if (iteration < MaxNumUpdates)
-            foreach (var (_, img) in momentImages) img.Scale(iteration / (iteration + 1.0f));
+        else if (iteration < MaxNumUpdates) {
+            foreach (var (c, img) in momentImages) {
+                img.Scale(iteration / (iteration + 1.0f));
+            }
+        }
     }
 
     protected override void OnEndIteration(uint iteration) {
@@ -321,21 +353,23 @@ class AdaptiveVcm : MomentEstimatingVcm {
             denoisedImage = new(img, MonochromeImage.RgbConvertMode.Average);
 
             // Make the current absolute moments of the first iteration relative
-            foreach (var (c, moment) in momentImages) {
+            Parallel.ForEach(momentImages, (elem) => {
+                var (_, moment) = elem;
                 for (int row = 0; row < Scene.FrameBuffer.Height; ++row) {
                     for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
                         float mean = img.GetPixel(col, row).Average;
                         if (mean == 0) continue;
-                        moment.SetPixel(col, row, moment.GetPixel(col, row) / (mean * mean));
+                        moment.SetPixel(col, row, moment.GetPixel(col, row));// / (mean * mean));
                     }
                 }
-            }
+            });
         }
 
         // Reduce noise in the second moments via a simple lowpass filter
-        foreach (var (candidate, moment) in momentImages) {
-            Filter.RepeatedBox(moment, filteredMoments[candidate], 16);
-        }
+        Parallel.ForEach(momentImages, (elem) => {
+            var (candidate, img) = elem;
+            FilterMoments(img, filteredMoments[candidate]);
+        });
 
         OptimizePerPixel();
         OptimizePerImage();
@@ -350,7 +384,9 @@ class AdaptiveVcm : MomentEstimatingVcm {
         base.OnAfterRender();
 
         if (WriteDebugInfo) {
-            var layers = new (string, ImageBase)[filteredMoments.Count + marginalizedMoments.Count];
+            int num = filteredMoments.Count + marginalizedMoments.Count + marginalizedCosts.Count;
+            var layers = new (string, ImageBase)[num];
+
             int i = 0;
             foreach (var (c, img) in filteredMoments) {
                 // Multiply the cost heuristic on all pixel moments (this pollutes the values, but rendering
@@ -359,9 +395,12 @@ class AdaptiveVcm : MomentEstimatingVcm {
                 img.Scale(cost);
                 layers[i++] = (c.ToString(), img);
             }
+
             foreach (var (c, img) in marginalizedMoments) {
                 layers[i++] = ($"global-{c.ToString()}", img);
+                layers[i++] = ($"global-cost-{c.ToString()}", marginalizedCosts[c]);
             }
+
             Layers.WriteToExr(Scene.FrameBuffer.Basename + "Moments.exr", layers);
         }
 
@@ -389,6 +428,9 @@ class AdaptiveVcm : MomentEstimatingVcm {
         float con = proxyWeights.Connections / NumConnectionsProxy;
         float curMerge = GetPerPixelMergeProbability(pixel);
         float curConnect = GetPerPixelConnectionCount(pixel);
+
+        int col = (int)pixel.X;
+        int row = (int)pixel.Y;
 
         // Update the second moment estimates of all candidates.
         foreach (var (candidate, img) in momentImages) {
@@ -420,7 +462,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
             Debug.Assert(float.IsFinite(correctionFactor));
             Debug.Assert(correctionFactor > 0);
 
-            img.AtomicAdd((int)pixel.X, (int)pixel.Y, correctionFactor * w2);
+            img.AtomicAdd(col, row, correctionFactor * w2);
         }
     }
 }
