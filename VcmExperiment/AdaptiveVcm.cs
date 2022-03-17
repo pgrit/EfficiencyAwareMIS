@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace EfficiencyAwareMIS.VcmExperiment;
 
 /// <summary>
@@ -195,6 +197,24 @@ class AdaptiveVcm : MomentEstimatingVcm {
         return (relMoments, costs);
     }
 
+    float ComputeOutlierThreshold(MonochromeImage image) {
+        int invPercentage = 50000; // = 1 / 0.002% = 1 / 0.00002
+        int numPixels = image.Width * image.Height;
+        int n = numPixels / invPercentage;
+
+        PriorityQueue<float, float> nLargest = new();
+        for (int row = 0; row < Scene.FrameBuffer.Height; ++row) {
+            for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
+                float v = image.GetPixel(col, row);
+                if (nLargest.Count >= n) v = Math.Max(nLargest.Dequeue(), v);
+                nLargest.Enqueue(v, v);
+            }
+        }
+        var threshold = nLargest.Dequeue();
+
+        return threshold;
+    }
+
     void OptimizePerImage() {
         var (relMoments, costs) = MakeBuffers();
 
@@ -207,6 +227,16 @@ class AdaptiveVcm : MomentEstimatingVcm {
                 marginalizedCosts.Add(candidate, new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height));
             }
         }
+
+        // For robustness, we reject a small percentage of largest values as outliers. For convenience,
+        // we first find these outliers and set a threshold for each candidate. This can be optimized, e.g.,
+        // by folding it into the optimization itself so it is done once per pixel and not once per pixel and
+        // candidate. (currently costs around 20ms per optimization run)
+        Dictionary<Candidate, float> outlierThresholds = new();
+        Parallel.ForEach(momentImages, elem => {
+            float t = ComputeOutlierThreshold(elem.Value);
+            lock(outlierThresholds) outlierThresholds.Add(elem.Key, t);
+        });
 
         // Accumulate relative moments and cost, using a parallel reduction with per-line buffering
         float recipNumPixels = 1.0f / (Scene.FrameBuffer.Width * Scene.FrameBuffer.Height);
@@ -253,10 +283,10 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     // Very simple outlier removal. Without this, a single firefly pixel can completely
                     // change the result. A hard-coded constant works, because we consider only the _relative_
                     // moments. In a practical application, you may want to use something more elaborate.
-                    // if (relMoment > 1e7) {
-                    //     relMoment = 1.0f;
-                    //     Interlocked.Increment(ref numOutliers);
-                    // }
+                    if (relMoment > outlierThresholds[c]) { //1e5) {
+                        relMoment = 1.0f;
+                        Interlocked.Increment(ref numOutliers);
+                    }
 
                     // Accumulate in the per-line storage. We scale by the number of pixels to get resolution
                     // independent values that are easier to interpret when debugging. Has no effect on the
@@ -282,8 +312,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
             }
         });
 
-        if (numOutliers > Scene.FrameBuffer.Width * Scene.FrameBuffer.Height * 0.01) {
-            Logger.Warning($"Rejected {numOutliers} outliers, which is more than 1% of all pixels.");
+        if (numOutliers > Scene.FrameBuffer.Width * Scene.FrameBuffer.Height * 0.0001) {
+            Logger.Warning($"Rejected {numOutliers} outliers, which is more than 0.01% of all pixels.");
         }
 
         // Find the best candidate in a simple linear search
@@ -359,7 +389,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
                     for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
                         float mean = img.GetPixel(col, row).Average;
                         if (mean == 0) continue;
-                        moment.SetPixel(col, row, moment.GetPixel(col, row));// / (mean * mean));
+                        moment.SetPixel(col, row, moment.GetPixel(col, row) / (mean * mean));
                     }
                 }
             });
