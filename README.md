@@ -1,6 +1,15 @@
 # EfficiencyAwareMIS
 
+TODO how to run
+
+TODO how to inspect results
+
+
 ## Project structure
+
+TODO pointers to key pieces from the paper (ref pseudo code)
+
+TODO description of each file + priority + relationship
 
 ### VCM integrator
 

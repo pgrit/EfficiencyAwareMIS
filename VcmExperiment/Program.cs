@@ -46,7 +46,7 @@ foreach(var (name, maxDepth) in scenes)
 new Benchmark(
     new GroundTruthExperiment(),
     sceneConfigs,
-    "Results",
+    "Results/GroundTruth",
     640,
     480,
     computeErrorMetrics: true
