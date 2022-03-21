@@ -1,0 +1,66 @@
+#!csharp
+
+#r "../../imageLab/ImageLab.Flip/bin/Debug/net6.0/ImageLab.Flip.dll"
+#r "nuget: SimpleImageIO"
+using SimpleImageIO;
+using ImageLab.Flip;
+using ImageLab.GUI.Util;
+using Microsoft.AspNetCore.Html;
+Flip.MakeHeader()
+
+#!markdown
+
+Utility code to load the images.
+
+#!csharp
+
+FalseColor connectColor = new(new LinearColormap(0, 16));
+FalseColor mergeColor = new(new LinearColormap(0, 1));
+
+IHtmlContent ShowMasks(string scene, float exposure = 0.0f) {
+    string dirname = "../VcmExperiment/Results/GroundTruth/" + scene;
+    ToneMapExposure mapExposure = new() { Exposure = exposure };
+
+    // computed per-pixel connection counts and merge decisions
+    var masks = Layers.LoadFromFile(dirname + "/Masks.exr");
+    var connectVar = connectColor.Apply(masks["connect-var"]);
+    var mergeVar = mergeColor.Apply(masks["merge-var"]);
+    var connectMoment = connectColor.Apply(masks["connect-moment"]);
+    var mergeMoment = mergeColor.Apply(masks["merge-moment"]);
+
+    // rendered images of reference and important techniques
+    var reference = new RgbImage(dirname + "/Reference.exr");
+    var pathTracer = new RgbImage(dirname + "/n=000000,c=00,m=0/Render.exr");
+    var vcm = new RgbImage(dirname + "/n=307200,c=04,m=1/Render.exr");
+    var bdpt = new RgbImage(dirname + "/n=307200,c=04,m=0/Render.exr");
+    var lt = new RgbImage(dirname + "/n=307200,c=00,m=0/Render.exr");
+
+    return Flip.Make(
+        ("ConnectVar", connectVar), ("MergeVar", mergeVar), 
+        ("ConnectMoment", connectMoment), ("MergeMoment", mergeMoment), 
+        ("Reference", mapExposure.Apply(reference)),
+        ("PT", mapExposure.Apply(pathTracer)),
+        ("PT+LT", mapExposure.Apply(lt)),
+        ("BDPT", mapExposure.Apply(bdpt)),
+        ("VCM", mapExposure.Apply(vcm))
+    );
+}
+
+#!markdown
+
+# Optimization with converged estimates
+
+Below, we show and analyse the results of running our optimization on converged error estimates. Variances are estimated by rendering 128 iterations with each candidate strategy and computing the MSE compared to the reference image. We run OpenImageDenoise on the MSE images to combat noise. (Upping the sample count by a factor of 10 would increase the render time by a factor of around 600 so we cannot compute converged estimates for all scenes.)
+
+#!markdown
+
+The cell below lists all scenes that have been rendered.
+
+#!csharp
+
+System.IO.Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth/")
+.Select(path => System.IO.Path.GetFileName(path))
+
+#!csharp
+
+ShowMasks("HomeOffice", 0)

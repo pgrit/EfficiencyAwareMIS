@@ -22,6 +22,11 @@ class AdaptiveVcm : MomentEstimatingVcm {
     public bool WriteDebugInfo = false;
 
     /// <summary>
+    /// If set to true, moments are accumulated by the optimizer is never run
+    /// </summary>
+    public bool OnlyAccumulate = false;
+
+    /// <summary>
     /// If set to false, connections are optimized over the whole image instead of per-pixel
     /// </summary>
     public bool UsePerPixelConnections = true;
@@ -64,7 +69,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
         Filter.RepeatedBox(buf, mask, 16);
     }
 
-    record struct Candidate(int NumLightPaths, int NumConnections, bool Merge) {
+    public record struct Candidate(int NumLightPaths, int NumConnections, bool Merge) {
         public override string ToString() => $"n={NumLightPaths:000000},c={NumConnections:00},m={(Merge ? 1 : 0)}";
     }
 
@@ -367,7 +372,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
     protected override void OnEndIteration(uint iteration) {
         base.OnEndIteration(iteration);
 
-        if (iteration + 1 > MaxNumUpdates) return;
+        if (iteration + 1 > MaxNumUpdates || OnlyAccumulate) return;
 
         var timer = Stopwatch.StartNew();
 
@@ -412,21 +417,16 @@ class AdaptiveVcm : MomentEstimatingVcm {
         base.OnAfterRender();
 
         if (WriteDebugInfo) {
-            int num = filteredMoments.Count + marginalizedMoments.Count + marginalizedCosts.Count;
+            int num = momentImages.Count + (marginalizedMoments?.Count ?? 0) + (marginalizedCosts?.Count ?? 0);
             var layers = new (string, ImageBase)[num];
 
             int i = 0;
-            foreach (var (c, img) in filteredMoments) {
-                // Multiply the cost heuristic on all pixel moments (this pollutes the values, but rendering
-                // is done already)
-                var cost = CostHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, (c.Merge ? 1.0f : 0.0f));
-                img.Scale(cost);
-                layers[i++] = (c.ToString(), img);
-            }
-
-            foreach (var (c, img) in marginalizedMoments) {
-                layers[i++] = ($"global-{c.ToString()}", img);
-                layers[i++] = ($"global-cost-{c.ToString()}", marginalizedCosts[c]);
+            foreach (var (c, img) in momentImages) layers[i++] = (c.ToString(), img);
+            if (marginalizedMoments != null) {
+                foreach (var (c, img) in marginalizedMoments) {
+                    layers[i++] = ($"global-{c.ToString()}", img);
+                    layers[i++] = ($"global-cost-{c.ToString()}", marginalizedCosts[c]);
+                }
             }
 
             Layers.WriteToExr(Scene.FrameBuffer.Basename + "Moments.exr", layers);
@@ -459,6 +459,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
         int col = (int)pixel.X;
         int row = (int)pixel.Y;
+
+        Debug.Assert(float.IsFinite(w2));
 
         // Update the second moment estimates of all candidates.
         foreach (var (candidate, img) in momentImages) {
