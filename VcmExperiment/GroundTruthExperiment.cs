@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace EfficiencyAwareMIS.VcmExperiment;
@@ -96,25 +97,48 @@ class GroundTruthExperiment : Experiment {
         return denoisedErrors;
     }
 
+    void Optimize(CostHeuristic costHeuristic, Dictionary<Candidate, MonochromeImage> variances,
+                  Dictionary<Candidate, MonochromeImage> moments, RgbImage reference, string dir, string suffix) {
+        VcmOptimizer.OptimizePerPixel(variances, costHeuristic, true, true,
+            out var mergeMaskVar, out var connectMaskVar);
+        VcmOptimizer.OptimizePerPixel(moments, costHeuristic, true, true,
+            out var mergeMaskMoment, out var connectMaskMoment);
+        Layers.WriteToExr(Path.Join(dir, $"Masks{suffix}.exr"),
+            ("merge-var", mergeMaskVar), ("connect-var", connectMaskVar),
+            ("merge-moment", mergeMaskMoment), ("connect-moment", connectMaskMoment)
+        );
+
+        // Optimize global counts and write to file
+        MonochromeImage pixelIntensities = new(reference, MonochromeImage.RgbConvertMode.Average);
+        var globalVar = VcmOptimizer.OptimizePerImage(variances, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, mergeMaskVar.GetPixel, connectMaskVar.GetPixel, true, true);
+        var globalMoment = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, mergeMaskMoment.GetPixel, connectMaskMoment.GetPixel, true, true);
+
+        // Compare relative and absolute moment / variances in global outcome
+        pixelIntensities.Fill(1); // set all pixels to one so we effectively don't use relative moments / vars
+        var globalVarAbs = VcmOptimizer.OptimizePerImage(variances, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, mergeMaskVar.GetPixel, connectMaskVar.GetPixel, true, true);
+        var globalMomentAbs = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, mergeMaskMoment.GetPixel, connectMaskMoment.GetPixel, true, true);
+        System.IO.File.WriteAllText(Path.Join(dir, $"GlobalCounts{suffix}.txt"),
+            $"{globalVar.Item1}\n{globalMoment.Item1}\n{globalVarAbs.Item1}\n{globalMomentAbs.Item1}");
+    }
+
     public override void OnDoneScene(Scene scene, string dir) {
-        // Gather variance estimates
-        Dictionary<Candidate, MonochromeImage> varianceImages = new();
-        RgbImage normals = null;
+        // Read reference image and auxiliary features for denoising
+        RgbImage normals = Layers.LoadFromFile(Path.Join(dir, candidates.First().ToString(), "Render.exr"))["normal"] as RgbImage;;
         RgbImage albedo = new(width, height);
         albedo.Fill(1, 1, 1);
         RgbImage reference = new(Path.Join(dir, "Reference.exr"));
-        foreach (var c in candidates) {
-            // Read the images
+
+        // Compute variance estimates from each rendered image
+        Dictionary<Candidate, MonochromeImage> varianceImages = new();
+        Parallel.ForEach(candidates, c => {
             RgbImage render = new(Path.Join(dir, c.ToString(), "Render.exr"));
-
-            if (normals == null) {
-                normals = Layers.LoadFromFile(Path.Join(dir, c.ToString(), "Render.exr"))["normal"] as RgbImage;
-            }
-
-            // Compute variance and add to the dictionary
             var variance = ComputeVarianceImage(render, reference);
-            varianceImages.Add(new(c.NumLightPaths, c.NumConnections, c.Merge), variance);
-        }
+            lock (varianceImages) varianceImages.Add(new(c.NumLightPaths, c.NumConnections, c.Merge), variance);
+        });
         var denoisedVariances = DenoiseErrors(varianceImages, normals, albedo, reference);
 
         // Save variances in a layered .exr
@@ -143,29 +167,62 @@ class GroundTruthExperiment : Experiment {
         costHeuristic.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
 
         // Compute merge and connect masks
-        VcmOptimizer.OptimizePerPixel(denoisedVariances, costHeuristic, true, true,
-            out var mergeMaskVar, out var connectMaskVar);
-        VcmOptimizer.OptimizePerPixel(denoisedMoments, costHeuristic, true, true,
-            out var mergeMaskMoment, out var connectMaskMoment);
-        Layers.WriteToExr(Path.Join(dir, "Masks.exr"),
-            ("merge-var", mergeMaskVar), ("connect-var", connectMaskVar),
-            ("merge-moment", mergeMaskMoment), ("connect-moment", connectMaskMoment)
-        );
-
-        // Optimize global counts and write to file
-        // ...
+        Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, "");
 
         // Repeat the same test but with merges disabled (are connections fine if merges are off?)
-        // ...
+        Dictionary<Candidate, MonochromeImage> noMergeVars = new();
+        Dictionary<Candidate, MonochromeImage> noMergeMoments = new();
+        foreach (var (c, v) in denoisedVariances) {
+            if (c.Merge == false) noMergeVars[c] = v;
+        }
+        foreach (var (c, v) in denoisedMoments) {
+            if (c.Merge == false) noMergeMoments[c] = v;
+        }
+        Optimize(costHeuristic, noMergeVars, noMergeMoments, reference, dir, "BDPT");
 
-        // Compare relative and absolute moment / variances in global outcome
-        // ...
+        // Gather cost heuristic values and actual render times and write them to a .json for plotting
+        Dictionary<string, float[]> times = new();
+        foreach (var c in candidates) {
+            var heuristic = costHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, c.Merge ? 1 : 0);
 
-        // Compare cost heuristic values to actual render times (plot)
-        // ...
+            var meta = JsonDocument.Parse(File.ReadAllText(Path.Join(dir, c.ToString(), "Render.json")));
+            long renderTimeMs = meta.RootElement.GetProperty("RenderTime").GetInt64();
+            float renderTimeSec = renderTimeMs / 1000.0f;
+            times.Add(c.ToString(), new [] { heuristic, renderTimeSec });
+        }
+        File.WriteAllText(Path.Join(dir, $"Costs.json"), JsonSerializer.Serialize(times));
 
         // Ablation study: optimization with different values for the cost heuristic hyperparameters
-        // ...
+        float costLightBase = 1.0f;
+        float costCameraBase = 1.0f;
+        float costMergeBase = 1.5f;
+        float costConnectBase = 0.4f;
+        var costScales = new float[] { 0.1f, 0.5f, 2.0f, 10.0f };
+        foreach (var scale in costScales) {
+            costHeuristic.CostCamera = costCameraBase * scale;
+            costHeuristic.CostLight = costLightBase;
+            costHeuristic.CostMerge = costMergeBase;
+            costHeuristic.CostConnect = costConnectBase;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostCam{scale}");
+
+            costHeuristic.CostCamera = costCameraBase;
+            costHeuristic.CostLight = costLightBase * scale;
+            costHeuristic.CostMerge = costMergeBase;
+            costHeuristic.CostConnect = costConnectBase;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostLight{scale}");
+
+            costHeuristic.CostCamera = costCameraBase;
+            costHeuristic.CostLight = costLightBase;
+            costHeuristic.CostMerge = costMergeBase * scale;
+            costHeuristic.CostConnect = costConnectBase;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostMerge{scale}");
+
+            costHeuristic.CostCamera = costCameraBase;
+            costHeuristic.CostLight = costLightBase;
+            costHeuristic.CostMerge = costMergeBase;
+            costHeuristic.CostConnect = costConnectBase * scale;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostConnect{scale}");
+        }
     }
 
     public override void OnDone(string workingDirectory) {

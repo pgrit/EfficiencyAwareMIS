@@ -93,7 +93,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
     protected override float GetPerPixelMergeProbability(Vector2 pixel) {
         if (!EnableMerging) return 0.0f;
-        if (mergeMask == null) return useMergesGlobal.GetValueOrDefault(false) ? 1.0f : 0.0f;
+        if (mergeMask == null) return useMergesGlobal.GetValueOrDefault(true) ? 1.0f : 0.0f;
         return mergeMask.GetPixel((int)pixel.X, (int)pixel.Y);
     }
 

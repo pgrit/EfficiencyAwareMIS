@@ -1,11 +1,17 @@
 #!csharp
 
+// Plotting stuff
+#r "nuget: Plotly.NET, 2.0.0-preview.18"
+#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
+using Plotly.NET;
+
+// Image viewer
 #r "../../imageLab/ImageLab.Flip/bin/Debug/net6.0/ImageLab.Flip.dll"
 #r "nuget: SimpleImageIO"
+using System.IO;
 using SimpleImageIO;
 using ImageLab.Flip;
 using ImageLab.GUI.Util;
-using Microsoft.AspNetCore.Html;
 Flip.MakeHeader()
 
 #!markdown
@@ -17,33 +23,47 @@ Utility code to load the images.
 FalseColor connectColor = new(new LinearColormap(0, 16));
 FalseColor mergeColor = new(new LinearColormap(0, 1));
 
-IHtmlContent ShowMasks(string scene, float exposure = 0.0f) {
+void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
     string dirname = "../VcmExperiment/Results/GroundTruth/" + scene;
     ToneMapExposure mapExposure = new() { Exposure = exposure };
 
-    // computed per-pixel connection counts and merge decisions
-    var masks = Layers.LoadFromFile(dirname + "/Masks.exr");
+    var masks = Layers.LoadFromFile(dirname + $"/Masks{suffix}.exr");
     var connectVar = connectColor.Apply(masks["connect-var"]);
     var mergeVar = mergeColor.Apply(masks["merge-var"]);
     var connectMoment = connectColor.Apply(masks["connect-moment"]);
     var mergeMoment = mergeColor.Apply(masks["merge-moment"]);
+    var reference = new RgbImage(dirname + "/Reference.exr");
 
-    // rendered images of reference and important techniques
+    Flip.Make(
+        ("ConnectVar", connectVar), ("MergeVar", mergeVar), 
+        ("ConnectMoment", connectMoment), ("MergeMoment", mergeMoment), 
+        ("Reference", mapExposure.Apply(reference))
+    ).Display();
+
+    // Read the global decisions and display them
+    HTML("<p>Number of light paths:</p>").Display();
+    var lines = System.IO.File.ReadAllLines(dirname + $"/GlobalCounts{suffix}.txt");
+    new Dictionary<string, int>() { 
+        { "Variance", int.Parse(lines[0]) }, 
+        { "Moment", int.Parse(lines[1]) }
+    }.Display();
+}
+
+void ShowRenders(string scene, float exposure = 0.0f) {
+    string dirname = "../VcmExperiment/Results/GroundTruth/" + scene;
+    ToneMapExposure mapExposure = new() { Exposure = exposure };
     var reference = new RgbImage(dirname + "/Reference.exr");
     var pathTracer = new RgbImage(dirname + "/n=000000,c=00,m=0/Render.exr");
     var vcm = new RgbImage(dirname + "/n=307200,c=04,m=1/Render.exr");
     var bdpt = new RgbImage(dirname + "/n=307200,c=04,m=0/Render.exr");
     var lt = new RgbImage(dirname + "/n=307200,c=00,m=0/Render.exr");
-
-    return Flip.Make(
-        ("ConnectVar", connectVar), ("MergeVar", mergeVar), 
-        ("ConnectMoment", connectMoment), ("MergeMoment", mergeMoment), 
+    Flip.Make(
         ("Reference", mapExposure.Apply(reference)),
         ("PT", mapExposure.Apply(pathTracer)),
         ("PT+LT", mapExposure.Apply(lt)),
         ("BDPT", mapExposure.Apply(bdpt)),
         ("VCM", mapExposure.Apply(vcm))
-    );
+    ).Display();
 }
 
 #!markdown
@@ -58,9 +78,83 @@ The cell below lists all scenes that have been rendered.
 
 #!csharp
 
-System.IO.Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth/")
-.Select(path => System.IO.Path.GetFileName(path))
+from path in Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth/")
+select Path.GetFileName(path)
+
+#!markdown
+
+The cell below lists the different cost heuristic scaling factors that have been generated.
 
 #!csharp
 
-ShowMasks("HomeOffice", 0)
+from path in Directory.EnumerateFiles("../VcmExperiment/Results/GroundTruth/HotLivingMod")
+where path.Contains("Cost") && path.Contains(".exr")
+select Path.GetFileNameWithoutExtension(path).Substring(5)
+
+#!markdown
+
+Supported suffixes are:
+- empty string (full VCM)
+- all cost heuristic variants listed above
+- "BDPT" (merges disabled)
+
+#!csharp
+
+ShowMasks("HotLivingMod", 0, "");
+
+#!csharp
+
+ShowMasks("HotLivingMod", 0, "BDPT");
+
+#!markdown
+
+## Cost heuristic vs render time
+
+#!markdown
+
+We plot the render time and heuristic values along one of the three dimensions (number of light paths, connections, merging). The values are normalized: we plot the increase in cost compared to the smallest value along the same dimension.
+
+If the "ratio" is less than 1, our method underestimates the increase in cost, compared to the actual render time.
+
+#!csharp
+
+GenericChart.GenericChart Variation(string scene, int? n, int? c, bool? m) {
+    string json = File.ReadAllText(Path.Join("../VcmExperiment/Results/GroundTruth/", scene, "Costs.json"));
+    var times = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, float[]>>(json);
+
+    string pattern = @"n=(\d+),c=(\d+),m=(\d)";
+    var candidates = times.Select(c => {
+        var groups = System.Text.RegularExpressions.Regex.Match(c.Key, pattern).Groups;
+        return (int.Parse(groups[1].Value), int.Parse(groups[2].Value), groups[3].Value == "1");
+    });
+
+    (float Heuristic, float Time) GetTime(int n, int c, bool m) {
+        var t = times[$"n={n:000000},c={c:00},m={(m?1:0)}"];
+        return (t[0], t[1]);
+    }
+
+    List<(float, float, float)> values = new();
+    foreach (var can in candidates) {
+        if (n != null && can.Item1 != n ||
+            m != null && can.Item3 != m || 
+            c != null && can.Item2 != c) 
+            continue;
+        var t = GetTime(can.Item1, can.Item2, can.Item3);
+        values.Add((n == null ? can.Item1 : (c == null ? can.Item2 : (can.Item3 ? 1 : 0)), t.Time, t.Heuristic));
+    }
+    var sorted = from v in values orderby v.Item1 select v;
+    var x = from v in sorted select v.Item1;
+    var a = from v in sorted select v.Item2 / sorted.First().Item2;
+    var b = from v in sorted select v.Item3 / sorted.First().Item3;
+    var ratio = from v in sorted select (v.Item3 / sorted.First().Item3) / (v.Item2 / sorted.First().Item2);
+
+    return Chart.Combine(new List<GenericChart.GenericChart>() {
+        Chart2D.Chart.Line<float, float, string>(x, a, Name: "Time"),
+        Chart2D.Chart.Line<float, float, string>(x, b, Name: "Heuristic"),
+        Chart2D.Chart.Line<float, float, string>(x, ratio, Name: "Ratio"),
+    }).WithMarginSize<float, float, float, float, float, float>(0.0f, 0.0f, 0.0f, 0.0f).WithSize(500, 300);
+}
+
+#!csharp
+
+Variation("HotLivingMod", 640 * 480 / 2, 0, null)
