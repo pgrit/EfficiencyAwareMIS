@@ -2,8 +2,14 @@ using System.Linq;
 
 namespace EfficiencyAwareMIS.VcmExperiment;
 
-public record struct Candidate(int NumLightPaths, int NumConnections, bool Merge) {
-    public override string ToString() => $"n={NumLightPaths:000000},c={NumConnections:00},m={(Merge ? 1 : 0)}";
+public record struct Candidate(int NumLightPaths, int? NumConnections, bool? Merge, bool? BuildPhotonMap = null) {
+    public override string ToString() {
+        string txt = $"n={NumLightPaths:000000}";
+        if (NumConnections.HasValue) txt += $",c={NumConnections:00}";
+        if (Merge.HasValue) txt += $",m={(Merge.Value ? 1 : 0)}";
+        if (BuildPhotonMap.HasValue) txt += $",pm={(BuildPhotonMap.Value ? 1 : 0)}";
+        return txt;
+    }
 }
 
 /// <summary>
@@ -47,7 +53,7 @@ class VcmOptimizer {
                 Candidate bestCandidate = new();
                 foreach (var (candidate, moment) in filteredErrors) {
                     float cost = costHeuristic.EvaluatePerPixel(candidate.NumLightPaths,
-                        candidate.NumConnections, (candidate.Merge ? 1.0f : 0.0f));
+                        candidate.NumConnections.Value, (candidate.Merge.Value ? 1.0f : 0.0f));
                     Debug.Assert(float.IsFinite(cost));
                     Debug.Assert(cost > 0);
 
@@ -60,12 +66,12 @@ class VcmOptimizer {
                 }
 
                 if (bestWorkNorm == 0.0f) { // disable all techs in completely black pixels
-                    bestCandidate = new(0, 0, false);
+                    bestCandidate = new(0, 0, false, null);
                 }
 
                 // Extract the per-pixel components from the best candidate
-                merge?.SetPixel(col, row, bestCandidate.Merge ? 1 : 0);
-                connect?.SetPixel(col, row, bestCandidate.NumConnections);
+                merge?.SetPixel(col, row, bestCandidate.Merge.Value ? 1 : 0);
+                connect?.SetPixel(col, row, bestCandidate.NumConnections.Value);
             }
         });
 
@@ -83,31 +89,40 @@ class VcmOptimizer {
     /// </summary>
     static void MakeBuffers(int numPixels, IEnumerable<float> numLightPathCandidates, bool perPixelConnect,
                             bool perPixelMerge, IEnumerable<int> numConnectCandidates,
-                            out Dictionary<Candidate, float> relMoments, out Dictionary<Candidate, float> costs) {
-        // Initialize total cost and moment for all per-image candidates
-        relMoments = new();
-        costs = new();
+                            out Dictionary<Candidate, float> errors, out Dictionary<Candidate, float> costs) {
+        // We track the refs in local variables as local functions cannot access "out" parameters
+        Dictionary<Candidate, float> errorsLocal = new(); errors = errorsLocal;
+        Dictionary<Candidate, float> costsLocal = new(); costs = costsLocal;
+        void Add(Candidate c) {
+            errorsLocal[c] = 0.0f;
+            costsLocal[c] = 0.0f;
+        }
+
         foreach (float nRel in numLightPathCandidates) {
             int n = (int)(numPixels * nRel);
             if (perPixelConnect) {
-                relMoments[new(n, 0, false)] = 0.0f;
-                if (!perPixelMerge) relMoments[new(n, 0, true)] = 0.0f;
-
-                costs[new(n, 0, false)] = 0.0f;
-                if (!perPixelMerge) costs[new(n, 0, true)] = 0.0f;
+                if (perPixelMerge) {
+                    Add(new(n, null, null, false));
+                    Add(new(n, null, null, true));
+                } else {
+                    Add(new(n, null, true, true));
+                    Add(new(n, null, false, false));
+                }
             } else {
                 foreach (int c in numConnectCandidates) {
-                    relMoments[new(n, c, false)] = 0.0f;
-                    if (!perPixelMerge) relMoments[new(n, c, true)] = 0.0f;
-
-                    costs[new(n, c, false)] = 0.0f;
-                    if (!perPixelMerge) costs[new(n, c, true)] = 0.0f;
+                    if (perPixelMerge) {
+                        Add(new(n, c, null, false));
+                        Add(new(n, c, null, true));
+                    } else {
+                        Add(new(n, c, true, true));
+                        Add(new(n, c, false, false));
+                    }
                 }
             }
         }
-        // Add path tracing
-        relMoments[new(0, 0, false)] = 0.0f;
-        costs[new(0, 0, false)] = 0.0f;
+
+        // path tracing
+        Add(new(0, 0, false, false));
     }
 
     /// <summary>
@@ -154,7 +169,7 @@ class VcmOptimizer {
         int width = errorImages.First().Value.Width;
         int height = errorImages.First().Value.Height;
         MakeBuffers(width * height, numLightPathCandidates, perPixelConnect, perPixelMerge, numConnectCandidates,
-            out var relMoments, out var costs);
+            out var relErrors, out var costs);
 
         // Create buffers to store the per-pixel marginalized values of the global candidates for debugging
         // TODO support this (needed to generate overview figure)
@@ -179,7 +194,6 @@ class VcmOptimizer {
 
         // Accumulate relative moments and cost, using a parallel reduction with per-line buffering
         float recipNumPixels = 1.0f / (width * height);
-        int numOutliers = 0;
         Parallel.For(0, height, row => {
             // Allocate a buffer for this line (TODO could be made thread-local and re-use the memory)
             MakeBuffers(width * height, numLightPathCandidates, perPixelConnect, perPixelMerge,
@@ -187,16 +201,21 @@ class VcmOptimizer {
 
             for (int col = 0; col < width; ++col) {
                 // Merges are considered enabled if there's at least a 10% probability of them happening
-                float mergeProb = mergeProbabilityFn(col, row);
-                bool mergeDecision = mergeProb > 0.1f;
+                bool mergeDecision = false;
+                if (perPixelMerge) {
+                    float mergeProb = mergeProbabilityFn(col, row);
+                    mergeDecision = mergeProb > 0.1f;
+                }
 
                 // Find closest candidate for the actual number of connections (assumes counts are sorted!)
-                float connectCount = connectCountFn(col, row);
                 int candidateConnect = 0;
-                foreach (int c in numConnectCandidates) {
-                    if (c >= connectCount) {
-                        candidateConnect = c;
-                        break;
+                if (perPixelConnect) {
+                    float connectCount = connectCountFn(col, row);
+                    foreach (int c in numConnectCandidates) {
+                        if (c >= connectCount) {
+                            candidateConnect = c;
+                            break;
+                        }
                     }
                 }
 
@@ -204,34 +223,58 @@ class VcmOptimizer {
                 if (mean == 0.0f) continue; // skip completely black pixels
                 float recipMeanSquare = 1.0f / (mean * mean);
 
-                foreach (var (c, moment) in errorImages) {
-                    // Filter out candidates that match the per-pixel decision, except the path tracer
-                    if (c.NumLightPaths != 0) {
-                        if (perPixelMerge && c.Merge != mergeDecision)
-                            continue;
-                        if (perPixelConnect && c.NumConnections != candidateConnect)
-                            continue;
-                    }
-
-                    var g = c;
-                    if (perPixelMerge) g.Merge = false;
-                    if (perPixelConnect) g.NumConnections = 0;
-
-                    var relMoment = moment.GetPixel(col, row);
-                    var cost = costHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, c.Merge ? 1 : 0);
+                void Accumulate(Candidate c, Candidate global) {
+                    var error = errorImages[c].GetPixel(col, row);
+                    var cost = costHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections.Value,
+                                                              c.Merge.Value ? 1 : 0, global.BuildPhotonMap.Value);
 
                     // Very simple outlier removal. Without this, a single firefly pixel can completely
                     // change the result.
-                    if (relMoment > outlierThresholds[c]) { //1e5) {
-                        relMoment = 1.0f;
-                        Interlocked.Increment(ref numOutliers);
+                    if (error > outlierThresholds[c]) { //1e5) {
+                        error = 0.0f;
                     }
 
                     // Accumulate in the per-line storage. We scale by the number of pixels to get resolution
                     // independent values that are easier to interpret when debugging. Has no effect on the
                     // outcome since recipNumPixels is a constant.
-                    lineErrors[g] += relMoment * recipNumPixels * recipMeanSquare;
-                    lineCosts[g] += cost * recipNumPixels;
+                    lineErrors[global] += error * recipMeanSquare * recipNumPixels;
+                    lineCosts[global] += cost * recipNumPixels;
+                }
+
+                foreach (var (c, moment) in errorImages) {
+                    if (c.NumLightPaths == 0) {
+                        Accumulate(c, new(0, 0, false, false));
+                        continue;
+                    }
+
+                    // Filter out candidates that match the per-pixel decision, except the path tracer
+                    // if (perPixelMerge && c.Merge != mergeDecision)
+                    //     continue;
+                    if (perPixelConnect && c.NumConnections != candidateConnect)
+                        continue;
+
+                    var g = c;
+                    if (perPixelMerge) g.Merge = null;
+                    if (perPixelConnect) g.NumConnections = null;
+
+                    if (perPixelMerge) { // 2 cases: PM disabled globally, or using the local decision
+                        if (mergeDecision == true && c.Merge == true) {
+                            g.BuildPhotonMap = true;
+                            Accumulate(c, g); // merges allowed, pm acceleration structure is built
+                        } else if (mergeDecision == true && c.Merge == false) {
+                            g.BuildPhotonMap = false;
+                            var localOverride = c; localOverride.Merge = false;
+                            Accumulate(localOverride, g); // merges disabled globally, no acceleration structure built
+                        } else if (mergeDecision == false && c.Merge == false) {
+                            g.BuildPhotonMap = true;
+                            Accumulate(c, g); // merges allowed, pm acceleration structure is built
+                            g.BuildPhotonMap = false;
+                            Accumulate(c, g); // merges disabled globally, no acceleration structure built
+                        }
+                    } else {
+                        g.BuildPhotonMap = c.Merge;
+                        Accumulate(c, g);
+                    }
 
                     // If the debugging buffers exist, track the last marginalized per-pixel value in them.
                     // We use "SetPixel", i.e. overwrite instead of accumulate, to not distort the values.
@@ -242,20 +285,16 @@ class VcmOptimizer {
                 }
             }
 
-            lock (relMoments) {
-                foreach (var (c, v) in lineErrors) relMoments[c] += v;
+            lock (relErrors) {
+                foreach (var (c, v) in lineErrors) relErrors[c] += v;
                 foreach (var (c, v) in lineCosts) costs[c] += v;
             }
         });
 
-        if (numOutliers > width * height * 0.0001) {
-            Logger.Warning($"Rejected {numOutliers} outliers, which is more than 0.01% of all pixels.");
-        }
-
         // Find the best candidate in a simple linear search
         float bestWorkNorm = float.MaxValue;
         Candidate bestCandidate = new();
-        foreach (var (candidate, moment) in relMoments) {
+        foreach (var (candidate, moment) in relErrors) {
             float cost = costs[candidate];
             float workNorm = moment * cost;
             if (workNorm < bestWorkNorm) {
@@ -287,7 +326,7 @@ class VcmOptimizer {
 
         int numLightPaths = bestCandidate.NumLightPaths;
         int? numConnect = perPixelConnect ? null : bestCandidate.NumConnections;
-        bool? merge = perPixelMerge ? null : bestCandidate.Merge;
+        bool? merge = perPixelMerge ? (bestCandidate.BuildPhotonMap.Value ? null : false) : bestCandidate.Merge;
         return (numLightPaths, numConnect, merge);
     }
 }

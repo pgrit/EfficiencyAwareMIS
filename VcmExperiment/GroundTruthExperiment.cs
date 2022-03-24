@@ -115,47 +115,59 @@ class GroundTruthExperiment : Experiment {
         var globalMoment = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
             numConnectionsCandidates, costHeuristic, mergeMaskMoment.GetPixel, connectMaskMoment.GetPixel, true, true);
 
+        // Compare to purely global optimization
+        var pureGlobalVar = VcmOptimizer.OptimizePerImage(variances, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, null, null, false, false);
+        var pureGlobalMoment = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, null, null, false, false);
+
         // Compare relative and absolute moment / variances in global outcome
         pixelIntensities.Fill(1); // set all pixels to one so we effectively don't use relative moments / vars
         var globalVarAbs = VcmOptimizer.OptimizePerImage(variances, pixelIntensities, numLightPathCandidates,
             numConnectionsCandidates, costHeuristic, mergeMaskVar.GetPixel, connectMaskVar.GetPixel, true, true);
         var globalMomentAbs = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
             numConnectionsCandidates, costHeuristic, mergeMaskMoment.GetPixel, connectMaskMoment.GetPixel, true, true);
+
         System.IO.File.WriteAllText(Path.Join(dir, $"GlobalCounts{suffix}.txt"),
-            $"{globalVar.Item1}\n{globalMoment.Item1}\n{globalVarAbs.Item1}\n{globalMomentAbs.Item1}");
+            $"{globalVar.Item1}\n{(globalVar.Item3.HasValue ? 0 : 1)}\n" +
+            $"{globalMoment.Item1}\n{(globalMoment.Item3.HasValue ? 0 : 1)}\n" +
+            $"{globalVarAbs.Item1}\n{(globalVarAbs.Item3.HasValue ? 0 : 1)}\n" +
+            $"{globalMomentAbs.Item1}\n{(globalMomentAbs.Item3.HasValue ? 0 : 1)}\n" +
+            $"{pureGlobalVar.Item1}\n" + $"{pureGlobalVar.Item2.Value}\n" + $"{pureGlobalVar.Item3.Value}\n" +
+            $"{pureGlobalMoment.Item1}\n" + $"{pureGlobalMoment.Item2.Value}\n" + $"{pureGlobalMoment.Item3.Value}\n");
     }
 
     public override void OnDoneScene(Scene scene, string dir) {
         // Read reference image and auxiliary features for denoising
-        // RgbImage normals = Layers.LoadFromFile(Path.Join(dir, candidates.First().ToString(), "Render.exr"))["normal"] as RgbImage;;
-        // RgbImage albedo = new(width, height);
-        // albedo.Fill(1, 1, 1);
-        // RgbImage reference = new(Path.Join(dir, "Reference.exr"));
+        RgbImage normals = Layers.LoadFromFile(Path.Join(dir, candidates.First().ToString(), "Render.exr"))["normal"] as RgbImage;;
+        RgbImage albedo = new(width, height);
+        albedo.Fill(1, 1, 1);
+        RgbImage reference = new(Path.Join(dir, "Reference.exr"));
 
-        // // Compute variance estimates from each rendered image
-        // Dictionary<Candidate, MonochromeImage> varianceImages = new();
-        // Parallel.ForEach(candidates, c => {
-        //     RgbImage render = new(Path.Join(dir, c.ToString(), "Render.exr"));
-        //     var variance = ComputeVarianceImage(render, reference);
-        //     lock (varianceImages) varianceImages.Add(new(c.NumLightPaths, c.NumConnections, c.Merge), variance);
-        // });
-        // var denoisedVariances = DenoiseErrors(varianceImages, normals, albedo, reference);
+        // Compute variance estimates from each rendered image
+        Dictionary<Candidate, MonochromeImage> varianceImages = new();
+        Parallel.ForEach(candidates, c => {
+            RgbImage render = new(Path.Join(dir, c.ToString(), "Render.exr"));
+            var variance = ComputeVarianceImage(render, reference);
+            lock (varianceImages) varianceImages.Add(new(c.NumLightPaths, c.NumConnections, c.Merge), variance);
+        });
+        var denoisedVariances = DenoiseErrors(varianceImages, normals, albedo, reference);
 
-        // // Save variances in a layered .exr
-        // var layers = new (string, ImageBase)[denoisedVariances.Count];
-        // int i = 0;
-        // foreach (var (c, img) in denoisedVariances) {
-        //     layers[i++] = (c.ToString(), img);
-        // }
-        // Layers.WriteToExr(Path.Join(dir, "Variances.exr"), layers);
+        // Save variances in a layered .exr
+        var layers = new (string, ImageBase)[denoisedVariances.Count];
+        int i = 0;
+        foreach (var (c, img) in denoisedVariances) {
+            layers[i++] = (c.ToString(), img);
+        }
+        Layers.WriteToExr(Path.Join(dir, "Variances.exr"), layers);
 
-        // // Gather moment estimates
-        // var momentLayers = Layers.LoadFromFile(Path.Join(dir, "MomentEstimator", "RenderMoments.exr"));
-        // Dictionary<Candidate, MonochromeImage> momentImages = new();
-        // foreach (var c in candidates) {
-        //     momentImages[c] = momentLayers[c.ToString()] as MonochromeImage;
-        // }
-        // var denoisedMoments = DenoiseErrors(momentImages, normals, albedo, reference);
+        // Gather moment estimates
+        var momentLayers = Layers.LoadFromFile(Path.Join(dir, "MomentEstimator", "RenderMoments.exr"));
+        Dictionary<Candidate, MonochromeImage> momentImages = new();
+        foreach (var c in candidates) {
+            momentImages[c] = momentLayers[c.ToString()] as MonochromeImage;
+        }
+        var denoisedMoments = DenoiseErrors(momentImages, normals, albedo, reference);
 
         // Retrieve the path length statistics for the cost heuristic from one of the candidates
         string path = Path.Join(dir, new Candidate(width * height, 4, true).ToString(), "Render.json");
@@ -166,25 +178,25 @@ class GroundTruthExperiment : Experiment {
         CostHeuristic costHeuristic = new();
         costHeuristic.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
 
-        // // Compute merge and connect masks
-        // Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, "");
+        // Compute merge and connect masks
+        Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, "");
 
-        // // Repeat the same test but with merges disabled (are connections fine if merges are off?)
-        // Dictionary<Candidate, MonochromeImage> noMergeVars = new();
-        // Dictionary<Candidate, MonochromeImage> noMergeMoments = new();
-        // foreach (var (c, v) in denoisedVariances) {
-        //     if (c.Merge == false) noMergeVars[c] = v;
-        // }
-        // foreach (var (c, v) in denoisedMoments) {
-        //     if (c.Merge == false) noMergeMoments[c] = v;
-        // }
-        // Optimize(costHeuristic, noMergeVars, noMergeMoments, reference, dir, "BDPT");
+        // Repeat the same test but with merges disabled (are connections fine if merges are off?)
+        Dictionary<Candidate, MonochromeImage> noMergeVars = new();
+        Dictionary<Candidate, MonochromeImage> noMergeMoments = new();
+        foreach (var (c, v) in denoisedVariances) {
+            if (c.Merge == false) noMergeVars[c] = v;
+        }
+        foreach (var (c, v) in denoisedMoments) {
+            if (c.Merge == false) noMergeMoments[c] = v;
+        }
+        Optimize(costHeuristic, noMergeVars, noMergeMoments, reference, dir, "BDPT");
 
         // Gather cost heuristic values and actual render times and write them to a .json for plotting
         Dictionary<string, float[]> times = new();
         foreach (var c in candidates) {
-            var heuristic = costHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections, c.Merge ? 1 : 0,
-                !c.Merge); // We compute the cost heuristic for global merging decisions
+            var heuristic = costHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections.Value,
+                c.Merge.Value ? 1 : 0, !c.Merge.Value); // We compute the cost heuristic for global merging decisions
 
             var meta = JsonDocument.Parse(File.ReadAllText(Path.Join(dir, c.ToString(), "Render.json")));
             long renderTimeMs = meta.RootElement.GetProperty("RenderTime").GetInt64();
@@ -194,36 +206,27 @@ class GroundTruthExperiment : Experiment {
         File.WriteAllText(Path.Join(dir, $"Costs.json"), JsonSerializer.Serialize(times));
 
         // Ablation study: optimization with different values for the cost heuristic hyperparameters
-        // float costLightBase = 1.0f;
-        // float costCameraBase = 1.0f;
-        // float costMergeBase = 1.5f;
-        // float costConnectBase = 0.4f;
-        // var costScales = new float[] { 0.1f, 0.5f, 2.0f, 10.0f };
-        // foreach (var scale in costScales) {
-        //     costHeuristic.CostCamera = costCameraBase * scale;
-        //     costHeuristic.CostLight = costLightBase;
-        //     costHeuristic.CostMerge = costMergeBase;
-        //     costHeuristic.CostConnect = costConnectBase;
-        //     Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostCam{scale}");
+        var costScales = new float[] { 0.1f, 0.5f, 2.0f, 10.0f };
+        foreach (var scale in costScales) {
+            CostHeuristic ch = new();
+            ch.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
+            ch.CostCamera *= scale;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostCam{scale}");
 
-        //     costHeuristic.CostCamera = costCameraBase;
-        //     costHeuristic.CostLight = costLightBase * scale;
-        //     costHeuristic.CostMerge = costMergeBase;
-        //     costHeuristic.CostConnect = costConnectBase;
-        //     Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostLight{scale}");
+            ch = new(); ch.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
+            ch.CostLight *= scale;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostLight{scale}");
 
-        //     costHeuristic.CostCamera = costCameraBase;
-        //     costHeuristic.CostLight = costLightBase;
-        //     costHeuristic.CostMerge = costMergeBase * scale;
-        //     costHeuristic.CostConnect = costConnectBase;
-        //     Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostMerge{scale}");
+            ch = new(); ch.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
+            ch.CostPhotonBuild *= scale;
+            ch.CostQuery *= scale;
+            ch.CostShade *= scale;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostMerge{scale}");
 
-        //     costHeuristic.CostCamera = costCameraBase;
-        //     costHeuristic.CostLight = costLightBase;
-        //     costHeuristic.CostMerge = costMergeBase;
-        //     costHeuristic.CostConnect = costConnectBase * scale;
-        //     Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostConnect{scale}");
-        // }
+            ch = new(); ch.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
+            ch.CostConnect *= scale;
+            Optimize(costHeuristic, denoisedVariances, denoisedMoments, reference, dir, $"CostConnect{scale}");
+        }
     }
 
     public override void OnDone(string workingDirectory) {

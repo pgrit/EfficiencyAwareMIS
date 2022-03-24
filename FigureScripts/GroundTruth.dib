@@ -45,9 +45,18 @@ void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
     // Read the global decisions and display them
     HTML("<p>Number of light paths:</p>").Display();
     var lines = System.IO.File.ReadAllLines(dirname + $"/GlobalCounts{suffix}.txt");
-    new Dictionary<string, int>() { 
-        { "Variance", int.Parse(lines[0]) }, 
-        { "Moment", int.Parse(lines[1]) }
+    new Dictionary<string, (int, bool)>() { 
+        { "Variance", (int.Parse(lines[0]), int.Parse(lines[1]) != 0) }, 
+        { "Moment", (int.Parse(lines[2]), int.Parse(lines[3]) != 0) },
+        { "Variance (abs.)", (int.Parse(lines[4]), int.Parse(lines[5]) != 0) }, 
+        { "Moment (abs.)", (int.Parse(lines[6]), int.Parse(lines[7]) != 0) }
+    }.Display();
+
+    HTML("<p>Global optimization:</p>").Display();
+    lines.Display();
+    new Dictionary<string, (int, int, bool)>() {
+        { "Variance", (int.Parse(lines[8]), int.Parse(lines[9]), bool.Parse(lines[10])) },
+        { "Moment", (int.Parse(lines[11]), int.Parse(lines[12]), bool.Parse(lines[13])) },
     }.Display();
 }
 
@@ -103,7 +112,7 @@ Supported suffixes are:
 
 #!csharp
 
-ShowMasks("Pool", 0, "");
+ShowMasks("HotLivingMod", 0, "");
 
 #!csharp
 

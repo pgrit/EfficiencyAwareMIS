@@ -37,12 +37,12 @@ class CostHeuristic {
     // /// </summary>
     // public float CostPhotonBuild = 0.4f;
 
-    float CostLight = 1.0f;
-    float CostCamera = 1.0f;
-    float CostConnect = 0.3f;
-    float CostShade = 0.25f;
-    float CostQuery = 0.045f;
-    float CostPhotonBuild = 0.175f;
+    public float CostLight = 1.0f;
+    public float CostCamera = 1.0f;
+    public float CostConnect = 0.3f;
+    public float CostShade = 0.25f;
+    public float CostQuery = 0.045f;
+    public float CostPhotonBuild = 0.175f;
 
     float numPixels;
     float avgCamLen;
