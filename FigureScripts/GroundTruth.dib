@@ -1,18 +1,20 @@
 #!csharp
 
+// Image viewer
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
+#r "nuget: SimpleImageIO"
+
 // Plotting stuff
 #r "nuget: Plotly.NET, 2.0.0-preview.18"
 #r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
-using Plotly.NET;
 
-// Image viewer
-#r "../../imageLab/ImageLab.Flip/bin/Debug/net6.0/ImageLab.Flip.dll"
-#r "nuget: SimpleImageIO"
+using Plotly.NET;
 using System.IO;
 using SimpleImageIO;
 using ImageLab.Flip;
 using ImageLab.GUI.Util;
-Flip.MakeHeader()
+
+HTML(Flip.MakeHeader())
 
 #!markdown
 
@@ -34,11 +36,11 @@ void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
     var mergeMoment = mergeColor.Apply(masks["merge-moment"]);
     var reference = new RgbImage(dirname + "/Reference.exr");
 
-    Flip.Make(
+    HTML(Flip.Make(
         ("ConnectVar", connectVar), ("MergeVar", mergeVar), 
         ("ConnectMoment", connectMoment), ("MergeMoment", mergeMoment), 
         ("Reference", mapExposure.Apply(reference))
-    ).Display();
+    )).Display();
 
     // Read the global decisions and display them
     HTML("<p>Number of light paths:</p>").Display();
@@ -57,13 +59,13 @@ void ShowRenders(string scene, float exposure = 0.0f) {
     var vcm = new RgbImage(dirname + "/n=307200,c=04,m=1/Render.exr");
     var bdpt = new RgbImage(dirname + "/n=307200,c=04,m=0/Render.exr");
     var lt = new RgbImage(dirname + "/n=307200,c=00,m=0/Render.exr");
-    Flip.Make(
+    HTML(Flip.Make(
         ("Reference", mapExposure.Apply(reference)),
         ("PT", mapExposure.Apply(pathTracer)),
         ("PT+LT", mapExposure.Apply(lt)),
         ("BDPT", mapExposure.Apply(bdpt)),
         ("VCM", mapExposure.Apply(vcm))
-    ).Display();
+    )).Display();
 }
 
 #!markdown
@@ -78,8 +80,9 @@ The cell below lists all scenes that have been rendered.
 
 #!csharp
 
-from path in Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth/")
-select Path.GetFileName(path)
+var scenes = from path in Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth/")
+             select Path.GetFileName(path);
+scenes
 
 #!markdown
 
@@ -100,11 +103,31 @@ Supported suffixes are:
 
 #!csharp
 
-ShowMasks("HotLivingMod", 0, "");
+ShowMasks("Pool", 0, "");
 
 #!csharp
 
-ShowMasks("HotLivingMod", 0, "BDPT");
+ShowMasks("Pool", 0, "CostConnect0.5");
+
+#!csharp
+
+ShowRenders("HotLivingMod", 0);
+
+#!csharp
+
+ShowMasks("HotLivingMod", 0, "CostMerge10");
+
+#!csharp
+
+ShowRenders("LampCaustic", 0);
+
+#!csharp
+
+ShowMasks("LampCaustic", 0, "");
+
+#!csharp
+
+ShowMasks("LampCaustic", 0, "CostMerge10");
 
 #!markdown
 
@@ -155,6 +178,29 @@ GenericChart.GenericChart Variation(string scene, int? n, int? c, bool? m) {
     }).WithMarginSize<float, float, float, float, float, float>(0.0f, 0.0f, 0.0f, 0.0f).WithSize(500, 300);
 }
 
+#!markdown
+
+The current heuristic appears to consistently overestimate the cost of connections by about 40%.
+
 #!csharp
 
-Variation("HotLivingMod", 640 * 480 / 2, 0, null)
+foreach (string scene in scenes) {
+    HTML($"<h4>{scene}</h4>").Display();
+    Variation(scene, 640 * 480, null, false).Display();
+    Variation(scene, 640 * 480, null, true).Display();
+}
+
+#!markdown
+
+The cost of merging is consistently underestimated in most scenes by 10-40%.
+Notable exceptions: LampCaustic and RoughIndir. There, we are spot-on.
+
+Pattern: if `AveragePhotonsPerQuery` < 1, then the heuristic fails. Otherwise, it is a great match.
+
+#!csharp
+
+foreach (string scene in scenes) {
+    HTML($"<h4>{scene}</h4>").Display();
+    Variation(scene, 640 * 480, 0, null).Display();
+    // Variation(scene, 640 * 480 * 2, 16, null).Display();
+}

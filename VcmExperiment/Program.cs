@@ -5,7 +5,6 @@ SceneRegistry.AddSource("../../GuidingExperiments/Scenes");
 
 List<(string, int)> scenes = new() {
     // Most interesting
-
     ("HotLivingMod", 10),
     ("VeachBidir", 5),
     ("TargetPractice", 5),
@@ -43,6 +42,13 @@ List<SceneConfig> sceneConfigs = new();
 foreach(var (name, maxDepth) in scenes)
     sceneConfigs.Add(SceneRegistry.LoadScene(name, maxDepth: maxDepth));
 
+// new Benchmark(
+//     new CostMeasurements(),
+//     sceneConfigs,
+//     "Results/CostMeasurements",
+//     640, 480
+// ).Run(skipReference: true);
+
 new Benchmark(
     new GroundTruthExperiment(),
     sceneConfigs,
@@ -51,7 +57,3 @@ new Benchmark(
     480,
     computeErrorMetrics: true
 ).Run();
-
-// TODO generate overview of equal-time error values and decisions
-
-// TODO validate the global decisions via ground truth render time and relMSE

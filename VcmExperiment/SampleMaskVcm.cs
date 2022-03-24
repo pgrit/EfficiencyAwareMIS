@@ -7,6 +7,22 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// The default uses constant values based on the global parameters from the base class.
 /// </summary>
 public class SampleMaskVcm : CorrelAwareVcm {
+    long photonBuildTime;
+    long ltShadowTime;
+
+    protected override void OnBeforeRender() {
+        base.OnBeforeRender();
+        photonBuildTime = 0;
+        ltShadowTime = 0;
+    }
+
+    protected override void OnAfterRender() {
+        base.OnAfterRender();
+
+        Scene.FrameBuffer.MetaData["PhotonBuildTime"] = photonBuildTime;
+        Scene.FrameBuffer.MetaData["LightTracerShadowTime"] = ltShadowTime;
+    }
+
     protected virtual float GetPerPixelMergeProbability(Vector2 pixel) {
         if (!EnableMerging) return 0.0f;
         return 1.0f;
@@ -30,9 +46,14 @@ public class SampleMaskVcm : CorrelAwareVcm {
     }
 
     protected override void ProcessPathCache() {
+        var timer = Stopwatch.StartNew();
+
         // always create vertex cache, we don't bother checking all pixels whether they actually do connections
         vertexSelector = new VertexSelector(LightPaths.PathCache);
         if (EnableLightTracer) SplatLightVertices();
+
+        ltShadowTime += timer.ElapsedMilliseconds;
+        timer.Restart();
 
         if (EnableMerging) {
             int index = 0;
@@ -49,6 +70,7 @@ public class SampleMaskVcm : CorrelAwareVcm {
             }
             photonMap.Build();
         }
+        photonBuildTime += timer.ElapsedMilliseconds;
     }
 
     /// <summary>
@@ -63,10 +85,6 @@ public class SampleMaskVcm : CorrelAwareVcm {
         float residual = value - num;
         if (rng.NextFloat() < residual) num++;
         return num;
-    }
-
-    protected virtual void OnCombinedConnectSample(int numSamples, RgbColor throughput, RgbColor combinedEstimate) {
-        // TODO figure out how this could be used...
     }
 
     /// <inheritdoc />
@@ -88,7 +106,6 @@ public class SampleMaskVcm : CorrelAwareVcm {
             for (int i = 0; i < numConnect; ++i)
                 connectContrib += BidirConnections(hit, -ray.Direction, rng, path, toAncestorJacobian);
             value += throughput * connectContrib;
-            OnCombinedConnectSample(numConnect, throughput, connectContrib);
 
             value += throughput * PerformMerging(ray, hit, rng, path, toAncestorJacobian);
         }
