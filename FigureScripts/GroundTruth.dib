@@ -18,7 +18,7 @@ HTML(Flip.MakeHeader())
 
 #!markdown
 
-Utility code to load the images.
+Utility code to load the images and related values (sample counts, ratios, masks, ...)
 
 #!csharp
 
@@ -31,10 +31,16 @@ void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
 
     var masks = Layers.LoadFromFile(dirname + $"/Masks{suffix}.exr");
     var connectVar = connectColor.Apply(masks["connect-var"]);
-    var mergeVar = mergeColor.Apply(masks["merge-var"]);
+    ImageBase mergeVar = mergeColor.Apply(masks["merge-var"]);
     var connectMoment = connectColor.Apply(masks["connect-moment"]);
-    var mergeMoment = mergeColor.Apply(masks["merge-moment"]);
+    ImageBase mergeMoment = mergeColor.Apply(masks["merge-moment"]);
     var reference = new RgbImage(dirname + "/Reference.exr");
+    var lines = System.IO.File.ReadAllLines(dirname + $"/GlobalCounts{suffix}.txt");
+
+    bool mergeForcedOffVar = int.Parse(lines[1]) == 0;
+    bool mergeForcedOffMoment = int.Parse(lines[3]) == 0;
+    if (mergeForcedOffVar) mergeVar = masks["merge-var"]; // gray it out by disabling false color
+    if (mergeForcedOffMoment) mergeMoment = masks["merge-moment"]; // gray it out by disabling false color
 
     HTML(Flip.Make(
         ("ConnectVar", connectVar), ("MergeVar", mergeVar), 
@@ -43,9 +49,8 @@ void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
     )).Display();
 
     // Read the global decisions and display them
-    HTML("<p>Number of light paths:</p>").Display();
-    var lines = System.IO.File.ReadAllLines(dirname + $"/GlobalCounts{suffix}.txt");
-    new Dictionary<string, (int, bool)>() { 
+    HTML("<p>Number of light paths:</p>").Display();    
+    new Dictionary<string, (int NumLightPaths, bool EnableMerging)>() { 
         { "Variance", (int.Parse(lines[0]), int.Parse(lines[1]) != 0) }, 
         { "Moment", (int.Parse(lines[2]), int.Parse(lines[3]) != 0) },
         { "Variance (abs.)", (int.Parse(lines[4]), int.Parse(lines[5]) != 0) }, 
@@ -53,8 +58,7 @@ void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
     }.Display();
 
     HTML("<p>Global optimization:</p>").Display();
-    lines.Display();
-    new Dictionary<string, (int, int, bool)>() {
+    new Dictionary<string, (int NumLightPaths, int NumConnections, bool EnableMerging)>() {
         { "Variance", (int.Parse(lines[8]), int.Parse(lines[9]), bool.Parse(lines[10])) },
         { "Moment", (int.Parse(lines[11]), int.Parse(lines[12]), bool.Parse(lines[13])) },
     }.Display();
@@ -76,6 +80,109 @@ void ShowRenders(string scene, float exposure = 0.0f) {
         ("VCM", mapExposure.Apply(vcm))
     )).Display();
 }
+
+void CompareMomentVarRatio(string scene, string firstCandidate, string secondCandidate, float exposure = 0.0f) {
+    string dirname = "../VcmExperiment/Results/GroundTruth/" + scene;
+
+    var moments = Layers.LoadFromFile(dirname + $"/Moments.exr");
+    var variances = Layers.LoadFromFile(dirname + $"/Variances.exr");
+    var reference = new RgbImage(dirname + "/Reference.exr");
+    var ptMoment = moments[firstCandidate];
+    var bdptMoment = moments[secondCandidate];
+    var ptVariance = variances[firstCandidate];
+    var bdptVariance = variances[secondCandidate];
+
+    MonochromeImage momentRatio = new(640, 480);
+    MonochromeImage varianceRatio = new(640, 480);
+    float avgMomentRatio = 0.0f;
+    float avgVarRatio = 0.0f;
+    for (int row = 0; row < momentRatio.Height; ++row) {
+        for (int col = 0; col < momentRatio.Width; ++col) {
+            float ratio = ptMoment.GetPixelChannel(col, row, 0) / bdptMoment.GetPixelChannel(col, row, 0);
+            float ratioVar = ptVariance.GetPixelChannel(col, row, 0) / bdptVariance.GetPixelChannel(col, row, 0);
+
+            if (!float.IsFinite(ratio) || ratio <= 0 || reference.GetPixel(col, row) == RgbColor.Black) ratio = 1;
+            if (!float.IsFinite(ratioVar) || ratioVar <= 0 || reference.GetPixel(col, row) == RgbColor.Black) ratioVar = 1;
+
+            momentRatio.SetPixel(col, row, MathF.Log(ratio));
+            varianceRatio.SetPixel(col, row, MathF.Log(ratioVar));
+            
+            avgMomentRatio += MathF.Log(ratio) / (640 * 480);
+            avgVarRatio += MathF.Log(ratioVar) / (640 * 480);
+        }
+    }
+    avgMomentRatio = MathF.Exp(avgMomentRatio);
+    avgVarRatio = MathF.Exp(avgVarRatio);
+
+    FalseColorMap ratioColor = new();
+    var momentRatioColor = ratioColor.Apply(momentRatio);
+    var varianceRatioColor = ratioColor.Apply(varianceRatio);
+    ToneMapExposure mapExposure = new() { Exposure = exposure };
+
+    HTML("<p>Geometric mean of per-pixel ratios:<p>").Display();
+    (new[] { avgMomentRatio, avgVarRatio }).Display();
+    HTML(Flip.Make(
+        ("Moment ratio", momentRatioColor), 
+        ("Variance ratio", varianceRatioColor),
+        ("Reference", mapExposure.Apply(reference))
+    )).Display();
+}
+
+#!markdown
+
+## Comparison of moments and variances
+
+First, we compare the moments and variances directly. The cells below visualize the per-pixel ratio between the moments and the  variances of two candidates.
+
+Our approach is optimal, if moments and variances are roughly proportional. In that case, the two ratio images shown below should be identical.
+
+#!markdown
+
+### A "good" case
+
+The best case of our method are scenes that are challenging to render. The `HotLivingMod` (aka `Fish`) below is one such case. The ratio between path tracing and path light tracing is almost the same everywhere, with the sole exception of a small low-variance directly lit region in the bottom left.
+
+#!csharp
+
+CompareMomentVarRatio("HotLivingMod", $"n={0:000000},c=00,m=0", $"n={640*480*2:000000},c=00,m=0");
+
+#!markdown
+
+### Correlation
+
+The first problematic scenario is correlation, either in connections or in merges. Below, we compare ratios of different candidates on the `VeachBidir` scene.
+
+First, we show two uncorrelated techniques (BDPT with zero or a single connection). The ratios of moments and variances are identical.
+
+#!csharp
+
+CompareMomentVarRatio("VeachBidir", $"n={640*480:000000},c=00,m=0", $"n={640*480:000000},c=01,m=0");
+
+#!markdown
+
+If, however, we use a large number of connections (here 16), the correlation becomes visible. Second moments strongly overestimate the value of the additional connections in most regions of the scene (the predominately indirectly lit ones).
+
+#!csharp
+
+CompareMomentVarRatio("VeachBidir", $"n={640*480:000000},c=00,m=0", $"n={640*480:000000},c=16,m=0");
+
+#!markdown
+
+An even more severe case arises with merging. As the variance ratios shows, adding merges actually _increases_ the variance. Note that this is despite the fact that we use correl-aware MIS. Without correl-aware, this would be even more drastic. The second moments hugely overestimate the utility of merging in this scene.
+
+#!csharp
+
+CompareMomentVarRatio("VeachBidir", $"n={640*480:000000},c=00,m=0", $"n={640*480:000000},c=00,m=1");
+
+#!markdown
+
+### Low-variance cases
+
+The other failure case are scenes (or regions of scenes) that are trivial to render with unidirectional path tracing. (The problem tackled by var-aware MIS). The `House` below is such a case. We compare path tracing and path tracing + light tracing (i.e., BDPT with no connections). Adding light tracing increases the variance due to poor MIS weights (we are not using variance-aware MIS). The second moments instead reduce significantly.
+
+#!csharp
+
+CompareMomentVarRatio("House", $"n={0:000000},c=00,m=0", $"n={640*480*2:000000},c=00,m=0");
 
 #!markdown
 
@@ -112,31 +219,13 @@ Supported suffixes are:
 
 #!csharp
 
-ShowMasks("HotLivingMod", 0, "");
+ShowMasks("HomeOffice", 0, "");
+ShowRenders("HomeOffice", 0);
 
 #!csharp
 
-ShowMasks("Pool", 0, "CostConnect0.5");
-
-#!csharp
-
-ShowRenders("HotLivingMod", 0);
-
-#!csharp
-
-ShowMasks("HotLivingMod", 0, "CostMerge10");
-
-#!csharp
-
-ShowRenders("LampCaustic", 0);
-
-#!csharp
-
-ShowMasks("LampCaustic", 0, "");
-
-#!csharp
-
-ShowMasks("LampCaustic", 0, "CostMerge10");
+ShowMasks("VeachBidir", 0, "");
+ShowRenders("VeachBidir", 0);
 
 #!markdown
 
@@ -189,7 +278,7 @@ GenericChart.GenericChart Variation(string scene, int? n, int? c, bool? m) {
 
 #!markdown
 
-The current heuristic appears to consistently overestimate the cost of connections by about 40%.
+Cost as a function of the number of connections, for fixed number of light paths and merging decision.
 
 #!csharp
 
@@ -201,15 +290,30 @@ foreach (string scene in scenes) {
 
 #!markdown
 
-The cost of merging is consistently underestimated in most scenes by 10-40%.
-Notable exceptions: LampCaustic and RoughIndir. There, we are spot-on.
-
-Pattern: if `AveragePhotonsPerQuery` < 1, then the heuristic fails. Otherwise, it is a great match.
+Cost of merging with fixed number of light paths and no connections.
 
 #!csharp
 
 foreach (string scene in scenes) {
     HTML($"<h4>{scene}</h4>").Display();
     Variation(scene, 640 * 480, 0, null).Display();
-    // Variation(scene, 640 * 480 * 2, 16, null).Display();
 }
+
+#!markdown
+
+The cell below runs our optimizer on a scene where the cost heuristic is a close match to the render time: `Lamp caustic`. We then arbitrarily distort the relative cost of merging by up to one order of magnitude in both directions.
+
+#!csharp
+
+HTML("<h3>Correct costs</h3>").Display();
+ShowRenders("LampCaustic", 0);
+ShowMasks("LampCaustic", 0, "");
+
+HTML("<h3>Merges 10x cheaper</h3>").Display();
+ShowMasks("LampCaustic", 0, "CostMerge0.1");
+HTML("<h3>Merges 2x cheaper</h3>").Display();
+ShowMasks("LampCaustic", 0, "CostMerge0.5");
+HTML("<h3>Merges 2x more expensive</h3>").Display();
+ShowMasks("LampCaustic", 0, "CostMerge2");
+HTML("<h3>Merges 10x more expensive</h3>").Display();
+ShowMasks("LampCaustic", 0, "CostMerge10");

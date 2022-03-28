@@ -102,7 +102,7 @@ class VcmOptimizer {
             int n = (int)(numPixels * nRel);
             if (perPixelConnect) {
                 if (perPixelMerge) {
-                    Add(new(n, null, null, false));
+                    // Add(new(n, null, null, false));
                     Add(new(n, null, null, true));
                 } else {
                     Add(new(n, null, true, true));
@@ -111,7 +111,7 @@ class VcmOptimizer {
             } else {
                 foreach (int c in numConnectCandidates) {
                     if (perPixelMerge) {
-                        Add(new(n, c, null, false));
+                        // Add(new(n, c, null, false));
                         Add(new(n, c, null, true));
                     } else {
                         Add(new(n, c, true, true));
@@ -226,7 +226,7 @@ class VcmOptimizer {
                 void Accumulate(Candidate c, Candidate global) {
                     var error = errorImages[c].GetPixel(col, row);
                     var cost = costHeuristic.EvaluatePerPixel(c.NumLightPaths, c.NumConnections.Value,
-                                                              c.Merge.Value ? 1 : 0, global.BuildPhotonMap.Value);
+                                                              c.Merge.Value ? 1 : 0, !global.BuildPhotonMap.Value);
 
                     // Very simple outlier removal. Without this, a single firefly pixel can completely
                     // change the result.
@@ -262,14 +262,14 @@ class VcmOptimizer {
                             g.BuildPhotonMap = true;
                             Accumulate(c, g); // merges allowed, pm acceleration structure is built
                         } else if (mergeDecision == true && c.Merge == false) {
-                            g.BuildPhotonMap = false;
-                            var localOverride = c; localOverride.Merge = false;
-                            Accumulate(localOverride, g); // merges disabled globally, no acceleration structure built
+                            // g.BuildPhotonMap = false;
+                            // var localOverride = c; localOverride.Merge = false;
+                            // Accumulate(localOverride, g); // merges disabled globally, no acceleration structure built
                         } else if (mergeDecision == false && c.Merge == false) {
                             g.BuildPhotonMap = true;
                             Accumulate(c, g); // merges allowed, pm acceleration structure is built
-                            g.BuildPhotonMap = false;
-                            Accumulate(c, g); // merges disabled globally, no acceleration structure built
+                            // g.BuildPhotonMap = false;
+                            // Accumulate(c, g); // merges disabled globally, no acceleration structure built
                         }
                     } else {
                         g.BuildPhotonMap = c.Merge;

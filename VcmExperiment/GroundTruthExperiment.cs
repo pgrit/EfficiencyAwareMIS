@@ -37,7 +37,7 @@ class GroundTruthExperiment : Experiment {
         //     WriteDebugInfo = true,
         //     OnlyAccumulate = true,
         //     NumConnectionsCandidates = numConnectionsCandidates,
-        //     NumLightPathCandidates = numLightPathCandidates,
+        //     NumLightPathCandidates = numLightPathCandidates
         // }));
 
         return methods;
@@ -168,6 +168,14 @@ class GroundTruthExperiment : Experiment {
             momentImages[c] = momentLayers[c.ToString()] as MonochromeImage;
         }
         var denoisedMoments = DenoiseErrors(momentImages, normals, albedo, reference);
+
+        // Save denoised moments in a layered .exr
+        layers = new (string, ImageBase)[denoisedMoments.Count];
+        i = 0;
+        foreach (var (c, img) in denoisedMoments) {
+            layers[i++] = (c.ToString(), img);
+        }
+        Layers.WriteToExr(Path.Join(dir, "Moments.exr"), layers);
 
         // Retrieve the path length statistics for the cost heuristic from one of the candidates
         string path = Path.Join(dir, new Candidate(width * height, 4, true).ToString(), "Render.json");
