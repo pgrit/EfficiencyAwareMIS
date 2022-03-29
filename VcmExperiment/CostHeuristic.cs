@@ -3,7 +3,7 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// <summary>
 /// Evaluates our cost heuristic, based on global hyper-parameters and per-scene statistics
 /// </summary>
-class CostHeuristic {
+public class CostHeuristic {
     /// <summary>
     /// Hyper-parameter: relative cost of continuing the light subpath with one more edge and performing
     /// next event (connection to the camera, aka light tracing)

@@ -54,6 +54,12 @@ new Benchmark(
     sceneConfigs,
     "Results/GroundTruth",
     640,
-    480,
-    computeErrorMetrics: true
+    480
 ).Run();
+
+// new Benchmark(
+//     new FilterExperiment(),
+//     sceneConfigs,
+//     "Results/Filtering",
+//     640, 480
+// ).Run();

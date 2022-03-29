@@ -15,7 +15,7 @@ public record struct Candidate(int NumLightPaths, int? NumConnections, bool? Mer
 /// <summary>
 /// Searches the best candidate configuration given a set of per-pixel error estimates and a cost heuristic.
 /// </summary>
-class VcmOptimizer {
+public class VcmOptimizer {
     /// <summary>
     /// Filters the per-pixel merging decisions and writes the result to the same mask.
     /// </summary>
@@ -165,22 +165,25 @@ class VcmOptimizer {
                                                       CostHeuristic costHeuristic,
                                                       Func<int, int, float> mergeProbabilityFn,
                                                       Func<int, int, float> connectCountFn,
-                                                      bool perPixelConnect, bool perPixelMerge) {
+                                                      bool perPixelConnect, bool perPixelMerge,
+                                                      string debugOutputFilename = null) {
         int width = errorImages.First().Value.Width;
         int height = errorImages.First().Value.Height;
         MakeBuffers(width * height, numLightPathCandidates, perPixelConnect, perPixelMerge, numConnectCandidates,
             out var relErrors, out var costs);
 
         // Create buffers to store the per-pixel marginalized values of the global candidates for debugging
-        // TODO support this (needed to generate overview figure)
-        // if (WriteDebugInfo && marginalizedMoments == null) {
-        //     marginalizedMoments = new();
-        //     marginalizedCosts = new();
-        //     foreach (var (candidate, _) in relMoments) {
-        //         marginalizedMoments.Add(candidate, new(width, height));
-        //         marginalizedCosts.Add(candidate, new(width, height));
-        //     }
-        // }
+        Dictionary<Candidate, MonochromeImage> marginalizedMoments = null;
+        Dictionary<Candidate, MonochromeImage> marginalizedCosts = null;
+        if (debugOutputFilename != null) {
+            marginalizedMoments = new();
+            marginalizedCosts = new();
+            foreach (var (candidate, _) in relErrors) {
+                marginalizedMoments.Add(candidate, new(width, height));
+                marginalizedCosts.Add(candidate, new(width, height));
+            }
+        }
+
 
         // For robustness, we reject a small percentage of largest values as outliers. For convenience,
         // we first find these outliers and set a threshold for each candidate. This can be optimized, e.g.,
@@ -221,7 +224,7 @@ class VcmOptimizer {
 
                 float mean = referenceImage.GetPixel(col, row);
                 if (mean == 0.0f) continue; // skip completely black pixels
-                float recipMeanSquare = 1.0f / (mean * mean);
+                float recipMeanSquare = 1.0f / (mean * mean + 0.0001f);
 
                 void Accumulate(Candidate c, Candidate global) {
                     var error = errorImages[c].GetPixel(col, row);
@@ -239,6 +242,12 @@ class VcmOptimizer {
                     // outcome since recipNumPixels is a constant.
                     lineErrors[global] += error * recipMeanSquare * recipNumPixels;
                     lineCosts[global] += cost * recipNumPixels;
+
+                    // If the debugging buffers exist, track the last marginalized per-pixel value in them.
+                    // We use "SetPixel", i.e. overwrite instead of accumulate, to not distort the values.
+                    // Intermediate states are currently not kept, only the last outcome.
+                    marginalizedMoments?[global]?.SetPixel(col, row, error * recipMeanSquare);
+                    marginalizedCosts?[global]?.SetPixel(col, row, cost);
                 }
 
                 foreach (var (c, moment) in errorImages) {
@@ -275,13 +284,6 @@ class VcmOptimizer {
                         g.BuildPhotonMap = c.Merge;
                         Accumulate(c, g);
                     }
-
-                    // If the debugging buffers exist, track the last marginalized per-pixel value in them.
-                    // We use "SetPixel", i.e. overwrite instead of accumulate, to not distort the values.
-                    // Intermediate states are currently not kept, only the last outcome.
-                    // TODO re-add supprot for this
-                    // marginalizedMoments?[g]?.SetPixel(col, row, relMoment);
-                    // marginalizedCosts?[g]?.SetPixel(col, row, cost);
                 }
             }
 
@@ -301,6 +303,17 @@ class VcmOptimizer {
                 bestWorkNorm = workNorm;
                 bestCandidate = candidate;
             }
+        }
+
+        if (debugOutputFilename != null) {
+            int num = marginalizedMoments.Count + marginalizedCosts.Count;
+            var layers = new (string, ImageBase)[num];
+            int i = 0;
+            foreach (var (c, img) in marginalizedMoments) {
+                layers[i++] = ($"global-{c.ToString()}", img);
+                layers[i++] = ($"global-cost-{c.ToString()}", marginalizedCosts[c]);
+            }
+            Layers.WriteToExr(debugOutputFilename, layers);
         }
 
         // Keep track of the history of candidate values in the frame buffer
