@@ -18,50 +18,50 @@ class GroundTruthExperiment : Experiment {
         List<Method> methods = new() { };
 
         // Generate equivalent methods for each candidate
-        // foreach (var c in candidates) {
-        //     methods.Add(new(c.ToString(), new PathLengthEstimatingVcm() {
-        //         NumIterations = NumIterations,
-        //         NumConnections = c.NumConnections,
-        //         NumLightPaths = c.NumLightPaths,
-        //         EnableMerging = c.Merge
-        //     }));
-        // }
+        foreach (var c in candidates) {
+            methods.Add(new(c.ToString(), new PathLengthEstimatingVcm() {
+                NumIterations = NumIterations,
+                NumConnections = c.NumConnections.Value,
+                NumLightPaths = c.NumLightPaths,
+                EnableMerging = c.Merge.Value
+            }));
+        }
 
         // Run our method with long pilot iteration to estimate converged moments
-        // methods.Add(new("MomentEstimator", new AdaptiveVcm() {
-        //     NumIterations = NumIterations,
-        //     MaxNumUpdates = int.MaxValue,
-        //     NumConnections = 4,
-        //     NumLightPaths = null,
-        //     EnableMerging = true,
-        //     WriteDebugInfo = true,
-        //     OnlyAccumulate = true,
-        //     NumConnectionsCandidates = numConnectionsCandidates,
-        //     NumLightPathCandidates = numLightPathCandidates
-        // }));
+        methods.Add(new("MomentEstimator", new AdaptiveVcm() {
+            NumIterations = NumIterations,
+            MaxNumUpdates = int.MaxValue,
+            NumConnections = 4,
+            NumLightPaths = null,
+            EnableMerging = true,
+            WriteDebugInfo = true,
+            OnlyAccumulate = true,
+            NumConnectionsCandidates = numConnectionsCandidates,
+            NumLightPathCandidates = numLightPathCandidates
+        }));
 
         // Repeat, but without correlation-aware MIS
-        // foreach (var c in candidates) {
-        //     methods.Add(new("NoCAMIS-" + c.ToString(), new PathLengthEstimatingVcm() {
-        //         NumIterations = NumIterations,
-        //         NumConnections = c.NumConnections.Value,
-        //         NumLightPaths = c.NumLightPaths,
-        //         EnableMerging = c.Merge.Value,
-        //         DisableCorrelAware = true
-        //     }));
-        // }
-        // methods.Add(new("NoCAMIS-" + "MomentEstimator", new AdaptiveVcm() {
-        //     NumIterations = NumIterations,
-        //     MaxNumUpdates = int.MaxValue,
-        //     NumConnections = 4,
-        //     NumLightPaths = null,
-        //     EnableMerging = true,
-        //     WriteDebugInfo = true,
-        //     OnlyAccumulate = true,
-        //     NumConnectionsCandidates = numConnectionsCandidates,
-        //     NumLightPathCandidates = numLightPathCandidates,
-        //     DisableCorrelAware = true
-        // }));
+        foreach (var c in candidates) {
+            methods.Add(new("NoCAMIS-" + c.ToString(), new PathLengthEstimatingVcm() {
+                NumIterations = NumIterations,
+                NumConnections = c.NumConnections.Value,
+                NumLightPaths = c.NumLightPaths,
+                EnableMerging = c.Merge.Value,
+                DisableCorrelAware = true
+            }));
+        }
+        methods.Add(new("NoCAMIS-" + "MomentEstimator", new AdaptiveVcm() {
+            NumIterations = NumIterations,
+            MaxNumUpdates = int.MaxValue,
+            NumConnections = 4,
+            NumLightPaths = null,
+            EnableMerging = true,
+            WriteDebugInfo = true,
+            OnlyAccumulate = true,
+            NumConnectionsCandidates = numConnectionsCandidates,
+            NumLightPathCandidates = numLightPathCandidates,
+            DisableCorrelAware = true
+        }));
 
         return methods;
     }
@@ -280,9 +280,9 @@ class GroundTruthExperiment : Experiment {
     }
 
     public override void OnDoneScene(Scene scene, string dir) {
-        // Images data = new(candidates, NumIterations, dir, "");
-        // EvaluateGroundTruth("", dir, data);
-        // EvaluateCostHeuristic("", dir, data);
+        Images data = new(candidates, NumIterations, dir, "");
+        EvaluateGroundTruth("", dir, data);
+        EvaluateCostHeuristic("", dir, data);
 
         Images dataNoCAMIS = new(candidates, NumIterations, dir, "NoCAMIS-");
         EvaluateGroundTruth("NoCAMIS-", dir, dataNoCAMIS);

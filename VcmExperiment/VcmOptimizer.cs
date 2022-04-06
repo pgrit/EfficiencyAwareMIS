@@ -148,6 +148,8 @@ public class VcmOptimizer {
         return threshold;
     }
 
+    public delegate float CountFn(int col, int row);
+
     /// <summary>
     /// Runs the per-image optimization
     /// </summary>
@@ -163,8 +165,8 @@ public class VcmOptimizer {
                                                       IEnumerable<float> numLightPathCandidates,
                                                       IEnumerable<int> numConnectCandidates,
                                                       CostHeuristic costHeuristic,
-                                                      Func<int, int, float> mergeProbabilityFn,
-                                                      Func<int, int, float> connectCountFn,
+                                                      CountFn mergeProbabilityFn,
+                                                      CountFn connectCountFn,
                                                       bool perPixelConnect, bool perPixelMerge,
                                                       string debugOutputFilename = null) {
         int width = errorImages.First().Value.Width;

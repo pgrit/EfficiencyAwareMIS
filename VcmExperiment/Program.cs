@@ -49,13 +49,12 @@ foreach(var (name, maxDepth) in scenes)
 //     640, 480
 // ).Run(skipReference: true);
 
-new Benchmark(
-    new GroundTruthExperiment(),
-    sceneConfigs,
-    "Results/GroundTruth",
-    640,
-    480
-).Run();
+// new Benchmark(
+//     new GroundTruthExperiment(),
+//     sceneConfigs,
+//     "Results/GroundTruth",
+//     640, 480
+// ).Run();
 
 // new Benchmark(
 //     new FilterExperiment(),
@@ -63,3 +62,10 @@ new Benchmark(
 //     "Results/Filtering",
 //     640, 480
 // ).Run();
+
+new Benchmark(
+    new EqualTimeExperiment(),
+    sceneConfigs,
+    "Results/EqualTime",
+    640, 480
+).Run();

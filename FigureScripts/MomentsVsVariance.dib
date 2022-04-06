@@ -1,0 +1,162 @@
+#!fsharp
+
+#r "nuget: Plotly.NET, 2.0.0-preview.18"
+#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
+open Plotly.NET
+
+#load "Util.fsx"
+open Util
+
+#!markdown
+
+# Approximating the variance
+
+In general, the variance of a multi-sample MIS estimator using sample allocation strategy $\mathbf{n}$ is:
+$$
+V[\langle I \rangle_\mathbf{n}] = M[\langle I \rangle_\mathbf{n}] - r_\mathbf{n}
+$$
+where $M$ is the second moment and $r$ a residual.
+
+#!markdown
+
+## The second moment
+
+The second moment in general is:
+$$
+M[\langle I \rangle_\mathbf{n}] = \int \frac{f^2(x) \sum_t w_{\mathbf{n},t}(x) c_t(x)}{\sum_t c_t(x) n_t p_t(x)} dx
+$$
+
+With the balance heuristic ($c_t(x) = 1$), this simplifies to:
+$$
+M[\langle I \rangle_\mathbf{n}] = \int \frac{f^2(x)}{\sum_t n_t p_t(x)} dx
+$$
+
+While the power heuristic with exponent 2 ($c_t(x) = n_t p_t(x)$) yields:
+$$
+M[\langle I \rangle_\mathbf{n}] = \int \frac{f^2(x) \sum_t n^3_t p^3_t(x)}{\left( \sum_t n^2_t p^2_t(x) \right)^2} dx
+$$
+
+#!markdown
+
+## The residual
+
+### Independent samples
+In the simplest case of independent samples, the residual $r_\mathbf{n}$ is the sum of squared MIS-weighted means:
+$$
+r_\mathbf{n}^\mathrm{indep} = \sum_t \frac{1}{n_t} \left( \int w_{\mathbf{n},t}(x) f(x) dx \right)^2
+$$
+
+#!markdown
+
+This residual has the following bounds [Veach 1997, Appendix 9.A, page 289]:
+$$
+\frac{1}{\sum_t n_t} I^2 \leq r_\mathbf{n}^\mathrm{indep} \leq \frac{1}{\min_t n_t} I^2
+$$
+
+#!markdown
+
+#### Bounds
+
+In a classic bidirectional path tracer with one sample per pixel and the same number of light subpaths as camera subpaths, the minimum number of samples is 1 (path tracing),
+$$
+\min_t n_t = 1 ,
+$$
+while the maximum number of samples is the number of pixels (light tracing)
+$$
+\max_t n_t = P
+$$
+
+If we consider only the two unidirectional techniques (path tracing until we hit / connect to a light and light tracing until we hit / connect to the camera), the bounds of the residual term become:
+$$
+\frac{1}{1 + P} I^2 \leq r_\mathbf{n}^\mathrm{indep} \leq I^2
+$$
+At typical resolutions, where $P$ is in the millions, this leaves us with approximate bounds of
+$$
+0 \lesssim r_\mathbf{n}^\mathrm{indep} \leq I^2
+$$
+So our solution of using the moments instead of the full variance can be interpreted as replacing the residual term by its approximate lower bound of zero.
+
+#!markdown
+
+#### Approximation error
+
+Grittmann et al. [2019] have shown that the second moment dominates the variance of almost all sampling techniques in bidirectional rendering algorithms. The exception are scenes, or regions of scenes, where one technique has a very low (or even zero) variance.
+
+One such extreme case is shown in the simple scene below. A purely diffuse box is illuminated by a single large area light. Hence, the scene is rendered very efficiently by unidirectional path tracing, with very low variance.
+
+#!fsharp
+
+let scene = "BoxLargeLight"
+let counts = [ 0f; 0.25f; 0.5f; 1f; 2f ]
+let moments, vars = List.unzip [ for c in counts -> GetErrors scene $"n={int(640f*480f*c):d6},c=00,m=0" ]
+let m = [ for i in 0..counts.Length-1 -> moments[i] * (1f + counts[i])]
+let v = [ for i in 0..counts.Length-1 -> vars[i] * (1f + counts[i])]
+
+[
+    Chart.Line(counts, m, Name="Moment")
+    Chart.Line(counts, v, Name="Variance")
+]
+|> Chart.combine
+|> Chart.withMarginSize(0, 0, 0, 0)
+|> Chart.withSize(500, 300)
+
+#!fsharp
+
+CompareMomentVarRatio "BoxLargeLight" $"n={0:d6},c=00,m=0" $"n={640*480*1:d6},c=00,m=0" -1f
+
+#!markdown
+
+More realistic scenes like the Fish depicted below, sometimes exhibit similar effects, but typically limited to small regions in the image.
+
+#!fsharp
+
+CompareMomentVarRatio "HotLivingMod" $"n={0:d6},c=00,m=0" $"n={640*480*2:d6},c=00,m=0" 0f
+
+#!markdown
+
+### Correlated samples
+
+The residual becomes more complex if splitting, multiple shadow rays, or merging are used. These techniques introduce sample correlation by combining a single prefix path (camera subpath) with multiple suffix samples [Grittmann et al. 2021].
+
+The residual in that case is increased by the sum of MIS-weighted covariances of all techniques
+$$
+r_\mathbf{n}^\mathrm{correl} = \sum_t Cov(t) + \sum_t \frac{1}{n_t} \left( \int w_{\mathbf{n},t}(x) f(x) dx \right)^2 ,
+$$
+where $Cov(t)=0$ for all techniques with statistically independent samples.
+
+In the context of VCM, sample correlation arises through splitting or merging after a prefix $y$. So the covariance has the general form [Grittmann et al. 2021]:
+$$
+Cov(t) = \frac{n_t + 1}{n_t} \int_Y \frac{\left( \int_Z w_{\mathbf{n},t}(x) f(x) dz \right)^2}{p(y)} dy
+$$
+
+This covariance is, in general, unbounded. Both, the nested integral over all suffixes $z$ and the prefix density $p(y)$ can be arbitrarily high or arbitrarily small.
+
+Further, the covariance is also the most difficult to estimate. The squared nested integral can only be estimated by using splitting or merging. An efficient an practical estimation or approximation of the covariance is a promising direction for future work.
+
+Below, we show the adverse impact of correlation on a worst-case scene and on an average-case one. For both cases, we also compare the results with the classic balance heuristic and with the correlation-aware heuristic.
+
+#!fsharp
+
+// Veach Bidir
+CompareMomentVarRatio "VeachBidir" $"n={640*480:d6},c=00,m=0" $"n={640*480:d6},c=01,m=0" 0f
+
+#!fsharp
+
+CompareMomentVarRatio "VeachBidir" $"n={640*480:d6},c=00,m=0" $"n={640*480:d6},c=00,m=1" 0f
+
+#!markdown
+
+#### Correlation-aware MIS
+
+Variance ratios with and without correlation-aware weights
+Ground truth optimization result with and without correlation-aware weights
+
+#!markdown
+
+## Conclusion
+
+The second moments are a good approximation of the variance in bidirectional algorithms with two exceptions:
+1. Scenes / regions where path tracing has a very low variance
+2. Correlation due to splitting and merging
+
+The former is not a big problem and had only a minor effect on the result of our optimization. The correlation can be problematic. The correlation aware weights side-step the problem, but are not perfect. Efficient estimation or approximation of the covariance can significantly improve the results.

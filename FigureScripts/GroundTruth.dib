@@ -25,17 +25,17 @@ Utility code to load the images and related values (sample counts, ratios, masks
 FalseColor connectColor = new(new LinearColormap(0, 16));
 FalseColor mergeColor = new(new LinearColormap(0, 1));
 
-void ShowMasks(string scene, float exposure = 0.0f, string suffix = "") {
+void ShowMasks(string scene, float exposure = 0.0f, string suffix = "", string prefix = "") {
     string dirname = "../VcmExperiment/Results/GroundTruth/" + scene;
     ToneMapExposure mapExposure = new() { Exposure = exposure };
 
-    var masks = Layers.LoadFromFile(dirname + $"/Masks{suffix}.exr");
+    var masks = Layers.LoadFromFile(dirname + $"/{prefix}Masks{suffix}.exr");
     var connectVar = connectColor.Apply(masks["connect-var"]);
     ImageBase mergeVar = mergeColor.Apply(masks["merge-var"]);
     var connectMoment = connectColor.Apply(masks["connect-moment"]);
     ImageBase mergeMoment = mergeColor.Apply(masks["merge-moment"]);
     var reference = new RgbImage(dirname + "/Reference.exr");
-    var lines = System.IO.File.ReadAllLines(dirname + $"/GlobalCounts{suffix}.txt");
+    var lines = System.IO.File.ReadAllLines(dirname + $"/{prefix}GlobalCounts{suffix}.txt");
 
     bool mergeForcedOffVar = int.Parse(lines[1]) == 0;
     bool mergeForcedOffMoment = int.Parse(lines[3]) == 0;
@@ -130,8 +130,16 @@ void CompareMomentVarRatio(string scene, string firstCandidate, string secondCan
 
 #!csharp
 
-ShowMasks("RoughGlasses", 0, "");
-ShowRenders("RoughGlasses", 0);
+ShowMasks("RoughGlassesIndirect", 0, "", "");
+
+#!csharp
+
+ShowMasks("RoughGlassesIndirect", 0, "", "NoCAMIS-");
+
+#!csharp
+
+ShowMasks("LampCaustic", 0, "");
+ShowRenders("LampCaustic", 0);
 
 #!markdown
 
@@ -289,7 +297,6 @@ Cost as a function of the number of connections, for fixed number of light paths
 
 foreach (string scene in scenes) {
     HTML($"<h4>{scene}</h4>").Display();
-    Variation(scene, 640 * 480, null, false).Display();
     Variation(scene, 640 * 480, null, true).Display();
 }
 

@@ -1,148 +1,217 @@
-#!csharp
+#!fsharp
 
-// Image viewer
-#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
 #r "nuget: SimpleImageIO"
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.GUI.dll"
+#load "Util.fsx"
+open Util
+open ImageLab.Flip
+open ImageLab.GUI.Util
+open SimpleImageIO
 
-// Plotting stuff
-#r "nuget: Plotly.NET, 2.0.0-preview.18"
-#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
+#!fsharp
 
-using Plotly.NET;
-using System.IO;
-using SimpleImageIO;
-using ImageLab.Flip;
-using ImageLab.GUI.Util;
+// Our filter primitives: blur, dilate then blur, and do nothing
+let blur radius (img:MonochromeImage) = 
+    let buf = new MonochromeImage(img.Width, img.Height)
+    Filter.RepeatedBox(img, buf, radius)
+    buf
 
-HTML(Flip.MakeHeader())
+let dilate radius (img:MonochromeImage) =
+    let buf = new MonochromeImage(img.Width, img.Height)
+    Filter.Dilation(img, buf, radius)
+    buf
 
-#!markdown
+let dilateBlur dilateRadius blurRadius (img:MonochromeImage) =
+    let buf = new MonochromeImage(img.Width, img.Height)
+    Filter.Dilation(img, buf, dilateRadius)
+    Filter.RepeatedBox(buf, img, blurRadius)
+    img
 
-Load the rendered 1spp moment images and the denoised ground truth, apply different filterings and visually compare the generated masks.
-
-#!csharp
-
-#r "../VcmExperiment/bin/Release/net6.0/VcmExperiment.dll"
-using EfficiencyAwareMIS.VcmExperiment;
-using System.Text.Json;
-
-#!csharp
-
-float[] numLightPathCandidates = new[] { 0.25f, 0.5f, 0.75f, 1.0f, 2.0f };
-int[] numConnectionsCandidates = new[] { 0, 1, 2, 4, 8, 16 };
-int width = 640; int height = 480;
-
-var candidates = new List<Candidate>();
-foreach (float lightRatio in numLightPathCandidates) {
-    int numLightPaths = (int)(lightRatio * width * height);
-    foreach (int numConnect in numConnectionsCandidates) {
-        foreach (bool merge in new[] { true, false }) {
-            candidates.Add(new(numLightPaths, numConnect, merge));
-        }
-    }
-}
-candidates.Add(new(0, 0, false)); // Path tracer
-
-(MonochromeImage, MonochromeImage, (int, int?, bool?)) Optimize(CostHeuristic costHeuristic, 
-                                                                Dictionary<Candidate, MonochromeImage> moments, 
-                                                                Dictionary<Candidate, MonochromeImage> filtered,
-                                                                RgbImage reference) {
-    VcmOptimizer.OptimizePerPixel(filtered, costHeuristic, true, true, out var mergeMask, out var connectMask);
-
-    MonochromeImage pixelIntensities = new(reference, MonochromeImage.RgbConvertMode.Average);
-    var global = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
-    numConnectionsCandidates, costHeuristic, mergeMask.GetPixel, connectMask.GetPixel, true, true,
-    "GlobalStuff.exr");
-
-    return (mergeMask, connectMask, global);
-}
-
-void TestFilter(string scene, float exposure, Func<MonochromeImage, MonochromeImage> filterMoments,
-                Func<MonochromeImage, MonochromeImage> filterMergeMask, 
-                Func<MonochromeImage, MonochromeImage> filterConnectMask) {
-    string dir = "../VcmExperiment/Results/Filtering/" + scene;
-    RgbImage reference = new(Path.Join(dir, "Reference.exr"));
-    RgbImage render = new(Path.Join(dir, "MomentEstimator", "Render.exr"));
-
-    // Initialize the cost heuristic statistics
-    string path = Path.Join(dir, "MomentEstimator", "Render.json");
-    var json = JsonDocument.Parse(File.ReadAllText(path));
-    float avgCamLen = json.RootElement.GetProperty("AverageCameraPathLength").GetSingle();
-    float avgLightLen = json.RootElement.GetProperty("AverageLightPathLength").GetSingle();
-    float avgPhoton = json.RootElement.GetProperty("AveragePhotonsPerQuery").GetSingle();
-    CostHeuristic costHeuristic = new();
-    costHeuristic.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton);
-
-    // Gather moment estimates
-    var momentLayers = Layers.LoadFromFile(Path.Join(dir, "MomentEstimator", "RenderMoments.exr"));
-    Dictionary<Candidate, MonochromeImage> momentImages = new();
-    foreach (var c in candidates) {
-        momentImages[c] = momentLayers[c.ToString()] as MonochromeImage;
-    }
-    Dictionary<Candidate, MonochromeImage> filtered = new();
-    foreach (var (c, img) in momentImages) {
-        filtered.Add(c, filterMoments(img));
-    }
-
-    // Compute and filter merge and connect masks
-    var (merge, connect, global) = Optimize(costHeuristic, momentImages, filtered, reference);
-    merge = filterMergeMask(merge);
-    connect = filterConnectMask(connect);
-
-    ToneMapExposure mapExposure = new() { Exposure = exposure };
-    FalseColor connectColor = new(new LinearColormap(0, 16));
-    FalseColor mergeColor = new(new LinearColormap(0, 1));
-
-    string groundTruthDir = "../VcmExperiment/Results/GroundTruth/" + scene;
-    var masks = Layers.LoadFromFile(groundTruthDir + $"/Masks.exr");
-    var lines = System.IO.File.ReadAllLines(groundTruthDir + $"/GlobalCounts.txt");
-
-    HTML(Flip.Make(
-        ("Connect", connectColor.Apply(connect)), 
-        ("Connect (ground truth)", connectColor.Apply(masks["connect-moment"])), 
-        ("Merge", mergeColor.Apply(merge)), 
-        ("Merge (ground truth)", mergeColor.Apply(masks["merge-moment"])), 
-        ("Reference", mapExposure.Apply(reference)),
-        ("Render", mapExposure.Apply(render))
-    )).Display();
-
-    HTML("<p>Global optimization:</p>").Display();
-    new Dictionary<string, int>() {
-        { "Filtered", global.Item1 },
-        { "Ground truth", int.Parse(lines[2]) }
-    }.Display();
-}
+let noop img = img
 
 #!markdown
 
-## Without any filtering
+# Filter parameters
 
-#!csharp
+This notebook analyses the effect of different filter parameters on two example scenes. 
 
-TestFilter("LampCausticNoShade", 1.0f, moment => moment, merge => merge, connect => connect);
+`RoughGlasses` is a simple case with comparatively little noise in the second moment estimates. 
+
+`Pool` is the most challenging scene. Most light paths never find the visible region and the noise in the second moments with just one iteration of VCM is severe.
+
+Below we show the 1spp renderings from which the second moments are computed for both scenes. Note how the caustics at the bottom of the pool manifest only as a small number of outliers.
+
+#!fsharp
+
+let ShowRenders scene  exposure =
+    let mapExposure = new ToneMapExposure()
+    mapExposure.Exposure <- exposure
+    let dir = "../VcmExperiment/Results/Filtering/" + scene
+    let reference = new RgbImage(Path.Join(dir, "Reference.exr"))
+    let render = new RgbImage(Path.Join(dir, "MomentEstimator", "Render.exr"))
+    HTML(Flip.Make[|
+        struct("Render", mapExposure.Apply(render) :> ImageBase)
+        struct("Reference", mapExposure.Apply(reference) :> ImageBase)
+    |]).Display() |> ignore
+
+ShowRenders "RoughGlasses" 0f
+ShowRenders "Pool" -4f
+
+#!fsharp
+
+let EvaluateFilters scene preOps postOps =
+    let groundTruthDir = "../VcmExperiment/Results/GroundTruth/" + scene
+    let convergedMasks = Layers.LoadFromFile(groundTruthDir + $"/Masks.exr")
+
+    let mutable masks = [|
+        for preName, pre in preOps do
+            for postName, post in postOps do
+                let (mask, _, _) = OptimizeWithFilter scene 1f pre post noop
+                struct($"{preName}-{postName}", mask :> ImageBase)
+    |]
+    masks <- Array.insertAt 0 struct("Reference", convergedMasks["merge-moment"]) masks
+
+    HTML(Flip.Make(masks))
 
 #!markdown
 
-## Our filtering method
+## Blurring the moments
 
-#!csharp
+First, we compute the merge masks by only blurring the second moments. The masks below are the results without blurring, and with different blur radii.
 
-TestFilter("LampCausticNoShade", 1, moment => {
-    MonochromeImage buf = new(moment.Width, moment.Height);
-    Filter.RepeatedBox(moment, buf, 3);
-    return buf;
-}, merge => { 
-    MonochromeImage buf = new(merge.Width, merge.Height);
-    Filter.Dilation(merge, buf, 16);
-    Filter.RepeatedBox(buf, merge, 16);
-    return merge;
-}, connect => {
-    MonochromeImage buf = new(connect.Width, connect.Height);
-    Filter.Dilation(connect, buf, 4);
-    Filter.RepeatedBox(buf, connect, 16);
-    return connect;
-});
+A small amount of blur greatly reduces the noise and avoids many false-positives, where merging is enabled in a pixel due to noisy second moment estimates.
+
+Blurring too much introduces artifacts because incompatible information is mixed. A good example are the small glass dice at the bottom of the `RoughGlasses` scene. These vanish from the merge mask if a too aggressive blur is used.
+
+Note that in the extreme case of the `Pool` scene no amount of blur can fill all the gaps.
+
+#!fsharp
+
+EvaluateFilters "RoughGlasses"
+<|
+[
+    "None", noop
+    "Blur1", blur 1
+    "Blur3", blur 3
+    "Blur10", blur 10
+    "Blur100", blur 100
+]
+<|
+[
+    "None", noop
+]
+
+#!fsharp
+
+EvaluateFilters "Pool"
+<|
+[
+    "None", noop
+    "Blur1", blur 1
+    "Blur3", blur 3
+    "Blur10", blur 10
+    "Blur100", blur 100
+]
+<|
+[
+    "None", noop
+]
 
 #!markdown
 
-## Evaluation of different filter settings
+## Dilating the mask
+
+To support challenging cases like `Pool`, we err on the side of caution and dilate the mask. Below, we apply dilation (using a box kernel) with different radii. In all cases, the second moments are blurred with a radius of 3.
+
+The `Pool` scene requires very strong dilation to fill all the gaps, while the `RoughGlasses` could produce a more accurate mask with a smaller dilation radius.
+
+We opt for robustness and dilate with a radius of 16, which works even for the most challenging `Pool` scene. Future work could investigate how to automatically adapt the radius of this dilation.
+
+#!fsharp
+
+EvaluateFilters "Pool"
+<|
+[
+    "Blur3", blur 3
+]
+<|
+[
+    "Dilate1", dilate 1
+    "Dilate2", dilate 2
+    "Dilate4", dilate 4
+    "Dilate8", dilate 8
+    "Dilate16", dilate 16
+    "Dilate32", dilate 32
+]
+
+#!fsharp
+
+EvaluateFilters "RoughGlasses"
+<|
+[
+    "Blur3", blur 3
+]
+<|
+[
+    "Dilate1", dilate 1
+    "Dilate2", dilate 2
+    "Dilate4", dilate 4
+    "Dilate8", dilate 8
+    "Dilate16", dilate 16
+    "Dilate32", dilate 32
+]
+
+#!markdown
+
+## Blur after dilate
+
+The hard edges in the mask can cause visible discontinuities in the noise patterns. An easy remedy for that problem is to blur the mask after dilation (during rendering, non-integer values are stochastically rounded). Below, we compare different radii for such a blur, combined with the best dilation for each scene.
+
+The impact of this blur is rather minor. In the pool scene, a larger blur can fill in some residual gaps in the mask.
+
+#!fsharp
+
+EvaluateFilters "RoughGlasses"
+<|
+[
+    "Blur3", blur 3
+]
+<|
+[
+    "Dilate8", dilate 8
+    "Dilate8-Blur1", dilateBlur 8 1
+    "Dilate8-Blur2", dilateBlur 8 2
+    "Dilate8-Blur4", dilateBlur 8 4
+    "Dilate8-Blur8", dilateBlur 8 8
+    "Dilate8-Blur16", dilateBlur 8 16
+    "Dilate8-Blur32", dilateBlur 8 32
+]
+
+#!fsharp
+
+EvaluateFilters "Pool"
+<|
+[
+    "Blur3", blur 3
+]
+<|
+[
+    "Dilate16", dilate 16
+    "Dilate16-Blur1", dilateBlur 16 1
+    "Dilate16-Blur2", dilateBlur 16 2
+    "Dilate16-Blur4", dilateBlur 16 4
+    "Dilate16-Blur8", dilateBlur 16 8
+    "Dilate16-Blur16", dilateBlur 16 16
+    "Dilate16-Blur32", dilateBlur 16 32
+]
+
+#!markdown
+
+## Conclusion
+
+For our results, we used agressive filter parameters that work even for the most challenging `Pool` scene. This sacrifices some efficiency in simpler scenes but ensures robustness. 
+
+Our filtering is a very simple ad-hoc denoising scheme for the second moment images. Our requirements are different from that of a typical denoiser. For example, we apply dilation to combat the missing data problem and propagate information from outliers across large regions of the image. Designing more elaborate, and hence more effective and efficient, denoisers specifically for the second moment / variance images and computed sample masks used by our method is a promising direction for future work.
+
+Another improvement would be to postpone the mask creation and use more than just one sample per pixel to estimate the second moments. This is a trade-off: In some scenes, the more accurate moments will result in much higher efficiency. In other scenes, the noise in the moments is already low enough after one sample and the longer pilot iteration is wasteful. Ideas from adaptive sampling methods could be used to automatically determine the best duration of the pilot.

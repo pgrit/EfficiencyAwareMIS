@@ -11,6 +11,8 @@ __pycache__
 */Results/*
 */Results*/*
 /Figures/*
+/FigureScripts/*.ipynb
+/FigureScripts/*.html
 
 # Debugging stuff
 log

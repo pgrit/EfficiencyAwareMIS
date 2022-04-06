@@ -87,19 +87,20 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
     Dictionary<Candidate, MonochromeImage> marginalizedCosts = null;
 
-    MonochromeImage mergeMask, connectMask;
+    public MonochromeImage MergeMask = null;
+    public MonochromeImage ConnectMask = null;
 
     bool? useMergesGlobal;
 
     protected override float GetPerPixelMergeProbability(Vector2 pixel) {
         if (!EnableMerging) return 0.0f;
-        if (mergeMask == null) return useMergesGlobal.GetValueOrDefault(true) ? 1.0f : 0.0f;
-        return mergeMask.GetPixel((int)pixel.X, (int)pixel.Y);
+        if (MergeMask == null) return useMergesGlobal.GetValueOrDefault(true) ? 1.0f : 0.0f;
+        return MergeMask.GetPixel((int)pixel.X, (int)pixel.Y);
     }
 
     protected override float GetPerPixelConnectionCount(Vector2 pixel) {
-        if (connectMask == null) return NumConnections;
-        return connectMask.GetPixel((int)pixel.X, (int)pixel.Y);
+        if (ConnectMask == null) return NumConnections;
+        return ConnectMask.GetPixel((int)pixel.X, (int)pixel.Y);
     }
 
     void InitCandidates() {
@@ -130,8 +131,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
     }
 
     void OptimizePerPixel() {
-        if (UsePerPixelMerges) mergeMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
-        if (UsePerPixelConnections) connectMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
+        if (UsePerPixelMerges) MergeMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
+        if (UsePerPixelConnections) ConnectMask = new(Scene.FrameBuffer.Width, Scene.FrameBuffer.Height);
         Parallel.For(0, Scene.FrameBuffer.Height, row => {
             for (int col = 0; col < Scene.FrameBuffer.Width; ++col) {
                 // Search best full candidate in this pixel
@@ -156,15 +157,15 @@ class AdaptiveVcm : MomentEstimatingVcm {
                 }
 
                 // Extract the per-pixel components from the best candidate
-                if (UsePerPixelMerges) mergeMask.SetPixel(col, row, bestCandidate.Merge ? 1 : 0);
-                if (UsePerPixelConnections) connectMask.SetPixel(col, row, bestCandidate.NumConnections);
+                if (UsePerPixelMerges) MergeMask.SetPixel(col, row, bestCandidate.Merge ? 1 : 0);
+                if (UsePerPixelConnections) ConnectMask.SetPixel(col, row, bestCandidate.NumConnections);
             }
         });
 
         // Filtering the results prevents artifacts from single pixels / groups of pixels making bad decisions
         // based on noisy or missing data.
-        if (UsePerPixelMerges) FilterMergeMask(ref mergeMask);
-        if (UsePerPixelConnections) FilterConnectMask(ref connectMask);
+        if (UsePerPixelMerges) FilterMergeMask(ref MergeMask);
+        if (UsePerPixelConnections) FilterConnectMask(ref ConnectMask);
     }
 
     /// <summary>
@@ -434,8 +435,8 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
         // Write either or both of merge and connect sample mask, depending on which got created
         List<(string, ImageBase)> masks = new();
-        if (mergeMask != null) masks.Add(("merge", mergeMask));
-        if (connectMask != null) masks.Add(("connect", connectMask));
+        if (MergeMask != null) masks.Add(("merge", MergeMask));
+        if (ConnectMask != null) masks.Add(("connect", ConnectMask));
         if (masks.Count != 0) Layers.WriteToExr(Scene.FrameBuffer.Basename + "Masks.exr", masks.ToArray());
     }
 
