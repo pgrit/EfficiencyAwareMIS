@@ -16,28 +16,6 @@ public record struct Candidate(int NumLightPaths, int? NumConnections, bool? Mer
 /// Searches the best candidate configuration given a set of per-pixel error estimates and a cost heuristic.
 /// </summary>
 public class VcmOptimizer {
-    /// <summary>
-    /// Filters the per-pixel merging decisions and writes the result to the same mask.
-    /// </summary>
-    /// <param name="mask">Input / Output merge mask</param>
-    static void FilterMergeMask(ref MonochromeImage mask) {
-        // TODO make this configurable: delgate / FilterPipeline object / ...
-
-        // MonochromeImage buf = new(mask.Width, mask.Height);
-        // Filter.Dilation(mask, buf, 8);
-        // Filter.RepeatedBox(buf, mask, 16);
-    }
-
-    /// <summary>
-    /// Filters the per-pixel connection counts and writes the result to the same mask.
-    /// </summary>
-    /// <param name="mask">Input / Output connection mask</param>
-    static void FilterConnectMask(ref MonochromeImage mask) {
-        // MonochromeImage buf = new(mask.Width, mask.Height);
-        // Filter.Dilation(mask, buf, 3);
-        // Filter.RepeatedBox(buf, mask, 16);
-    }
-
     public static void OptimizePerPixel(Dictionary<Candidate, MonochromeImage> filteredErrors,
                                         CostHeuristic costHeuristic, bool perPixelMerge, bool perPixelConnect,
                                         out MonochromeImage mergeMask, out MonochromeImage connectMask) {
@@ -74,11 +52,6 @@ public class VcmOptimizer {
                 connect?.SetPixel(col, row, bestCandidate.NumConnections.Value);
             }
         });
-
-        // Filtering the results prevents artifacts from single pixels / groups of pixels making bad decisions
-        // based on noisy or missing data.
-        if (perPixelMerge) FilterMergeMask(ref merge);
-        if (perPixelConnect) FilterConnectMask(ref connect);
 
         mergeMask = merge;
         connectMask = connect;
@@ -130,23 +103,8 @@ public class VcmOptimizer {
     /// </summary>
     /// <param name="image">The image with outliers</param>
     /// <returns>The threshold</returns>
-    static float ComputeOutlierThreshold(MonochromeImage image) {
-        int invPercentage = 50000; // = 1 / 0.002% = 1 / 0.00002 (at our test resolution, this is 6 pixels)
-        int numPixels = image.Width * image.Height;
-        int n = numPixels / invPercentage;
-
-        PriorityQueue<float, float> nLargest = new();
-        for (int row = 0; row < image.Height; ++row) {
-            for (int col = 0; col < image.Width; ++col) {
-                float v = image.GetPixel(col, row);
-                if (nLargest.Count >= n) v = Math.Max(nLargest.Dequeue(), v);
-                nLargest.Enqueue(v, v);
-            }
-        }
-        var threshold = nLargest.Dequeue();
-
-        return threshold;
-    }
+    static float ComputeOutlierThreshold(MonochromeImage image)
+    => new SimpleImageIO.Histogram(image, image.Width * image.Height).Quantile(0.999f);
 
     public delegate float CountFn(int col, int row);
 
@@ -186,7 +144,6 @@ public class VcmOptimizer {
             }
         }
 
-
         // For robustness, we reject a small percentage of largest values as outliers. For convenience,
         // we first find these outliers and set a threshold for each candidate. This can be optimized, e.g.,
         // by folding it into the optimization itself so it is done once per pixel and not once per pixel and
@@ -199,11 +156,12 @@ public class VcmOptimizer {
 
         // Accumulate relative moments and cost, using a parallel reduction with per-line buffering
         float recipNumPixels = 1.0f / (width * height);
-        Parallel.For(0, height, row => {
-            // Allocate a buffer for this line (TODO could be made thread-local and re-use the memory)
+        Parallel.For<(Dictionary<Candidate, float> Errors, Dictionary<Candidate, float> Costs)>(0, height,
+        () => {
             MakeBuffers(width * height, numLightPathCandidates, perPixelConnect, perPixelMerge,
                 numConnectCandidates, out var lineErrors, out var lineCosts);
-
+            return (lineErrors, lineCosts);
+        }, (row, _, lineBuffers) => {
             for (int col = 0; col < width; ++col) {
                 // Merges are considered enabled if there's at least a 10% probability of them happening
                 bool mergeDecision = false;
@@ -235,19 +193,15 @@ public class VcmOptimizer {
 
                     // Very simple outlier removal. Without this, a single firefly pixel can completely
                     // change the result.
-                    if (error > outlierThresholds[c]) { //1e5) {
-                        error = 0.0f;
-                    }
+                    if (error > outlierThresholds[c]) error = 0.0f;
 
                     // Accumulate in the per-line storage. We scale by the number of pixels to get resolution
                     // independent values that are easier to interpret when debugging. Has no effect on the
                     // outcome since recipNumPixels is a constant.
-                    lineErrors[global] += error * recipMeanSquare * recipNumPixels;
-                    lineCosts[global] += cost * recipNumPixels;
+                    lineBuffers.Errors[global] += error * recipMeanSquare * recipNumPixels;
+                    lineBuffers.Costs[global] += cost * recipNumPixels;
 
                     // If the debugging buffers exist, track the last marginalized per-pixel value in them.
-                    // We use "SetPixel", i.e. overwrite instead of accumulate, to not distort the values.
-                    // Intermediate states are currently not kept, only the last outcome.
                     marginalizedMoments?[global]?.SetPixel(col, row, error * recipMeanSquare);
                     marginalizedCosts?[global]?.SetPixel(col, row, cost);
                 }
@@ -288,10 +242,11 @@ public class VcmOptimizer {
                     }
                 }
             }
-
+            return lineBuffers;
+        }, lineBuffers => {
             lock (relErrors) {
-                foreach (var (c, v) in lineErrors) relErrors[c] += v;
-                foreach (var (c, v) in lineCosts) costs[c] += v;
+                foreach (var (c, v) in lineBuffers.Item1) relErrors[c] += v;
+                foreach (var (c, v) in lineBuffers.Item2) costs[c] += v;
             }
         });
 
@@ -317,27 +272,6 @@ public class VcmOptimizer {
             }
             Layers.WriteToExr(debugOutputFilename, layers);
         }
-
-        // Keep track of the history of candidate values in the frame buffer
-        // TODO this should be done in the integrator
-        // if (WriteDebugInfo) {
-        //     if (!Scene.FrameBuffer.MetaData.ContainsKey("GlobalCandidateHistory")) {
-        //         Scene.FrameBuffer.MetaData["GlobalCandidateHistory"] =
-        //             new List<Dictionary<string, Dictionary<string, float>>>();
-        //     }
-        //     // Copy in a dictionary with a string key so it can be serialized
-        //     Dictionary<string, float> relMomentSerialized = new();
-        //     Dictionary<string, float> costSerialized = new();
-        //     foreach (var (c, m) in relMoments) {
-        //         relMomentSerialized[c.ToString()] = m;
-        //         costSerialized[c.ToString()] = costs[c];
-        //     }
-        //     Scene.FrameBuffer.MetaData["GlobalCandidateHistory"].Add(new Dictionary<string, Dictionary<string, float>>() {
-        //         {"RelativeMoment", relMomentSerialized},
-        //         {"Cost", costSerialized }
-        //     });
-        // }
-        // Scene.FrameBuffer.MetaData["PerImageDecision"] = bestCandidate;
 
         int numLightPaths = bestCandidate.NumLightPaths;
         int? numConnect = perPixelConnect ? null : bestCandidate.NumConnections;

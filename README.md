@@ -1,4 +1,18 @@
-# EfficiencyAwareMIS
+# Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering
+
+Implementation of the paper "Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering". This is a cleaned re-implementation of the original code with additional improvements. This is not the version that was used to generate the results in the paper. Results are similar but not identical.
+
+Compared to the paper, the main changes are:
+- Number of connections can be controlled on a per-pixel basis
+- A simple iterative update scheme: the optimizer is run multiple times with exponentially growing time between subsequent updates
+- Outlier rejection: the 0.1% of pixels with highest second moment are ignored when optimizing per-image sample counts
+- A more elaborate cost heuristic that incorporates the cost of building the photon map acceleration structure (experimental, seems to have little to no effect on the optimization outcome)
+
+## Dependencies
+
+
+
+## Running the experiments
 
 TODO how to run
 
@@ -26,13 +40,3 @@ The less interesting MIS computations and statistics gathering code are distribu
 - [MomentEstimatingVcm](VcmExperiment/MomentEstimatingVcm.cs) computes the MIS weights of the proxy strategy and invokes an abstract method for each sample.
 
 **TODO** point out how the different pieces of the pseudo code relate to code in this repo
-
-### Cost heuristic
-
-The cost heuristic is defined in [CostHeuristic.cs](VcmExperiment/CostHeuristic.cs).
-
-### Experiments
-
-TODO
-
-### Figures
