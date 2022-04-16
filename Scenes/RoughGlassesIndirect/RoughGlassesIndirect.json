@@ -1,0 +1,335 @@
+{
+  "materials": [
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.02037898264825344,
+          0.02037898264825344,
+          0.02037898264825344
+        ]
+      },
+      "name": "Blocker"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.09083687514066696,
+          0.0410766527056694,
+          0.017500758171081543
+        ]
+      },
+      "name": "BrownCup.001"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0,
+          0,
+          0
+        ]
+      },
+      "emission": {
+        "type": "rgb",
+        "value": [
+          500.0,
+          190.74495136737823,
+          57.65287205576897
+        ]
+      },
+      "name": "Candlelight"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.02790062502026558,
+          0.3800402283668518,
+          0.040735259652137756
+        ]
+      },
+      "roughness": 0.2750000059604645,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 1.0,
+      "specularTint": 1.0,
+      "name": "DiceBody"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "name": "DiceDots"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "name": "Dots_Stroke"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.0010000000474974513,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 1.0,
+      "specularTint": 0.0,
+      "name": "Glass-r-001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.10000000149011612,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 1.0,
+      "specularTint": 0.0,
+      "name": "Glass-r-1"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.30000001192092896,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 1.0,
+      "specularTint": 0.0,
+      "name": "Glass-r-3"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 1.0,
+      "specularTint": 0.0,
+      "name": "Glass-r-5"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.037391774356365204,
+          0.013529335148632526,
+          0.0101841501891613
+        ]
+      },
+      "name": "Ground"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.4000000059604645,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 0.0,
+      "specularTint": 0.0,
+      "name": "Material"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0,
+          0,
+          0
+        ]
+      },
+      "emission": {
+        "type": "rgb",
+        "value": [
+          5000.0,
+          4661.545753479004,
+          4083.317816257477
+        ]
+      },
+      "name": "Material.001"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0,
+          0,
+          0
+        ]
+      },
+      "emission": {
+        "type": "rgb",
+        "value": [
+          2.0,
+          1.7740647792816162,
+          1.4461102485656738
+        ]
+      },
+      "name": "FillLight"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0,
+          0,
+          0
+        ]
+      },
+      "emission": {
+        "type": "rgb",
+        "value": [
+          2.3796794414520264,
+          2.826952278614044,
+          3.0
+        ]
+      },
+      "name": "FillLight.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTransmittance": 1.0,
+      "specularTint": 0.0,
+      "name": "Paper"
+    },
+    {
+      "type": "diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.3588409125804901,
+          0.041681744158267975,
+          0.018400367349386215
+        ]
+      },
+      "name": "RedCloth"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.38333335518836975,
+      "anisotropic": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.6499999761581421,
+      "specularTransmittance": 0.0,
+      "specularTint": 0.0,
+      "name": "Table"
+    }
+  ],
+  "transforms": [
+    {
+      "name": "camera",
+      "position": [
+        -0.2031387984752655,
+        0.45709216594696045,
+        1.2949029207229614
+      ],
+      "rotation": [
+        -24.012784277508942,
+        -15.058098006493156,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "cameras": [
+    {
+      "fov": 29.698316501828472,
+      "transform": "camera",
+      "name": "default",
+      "type": "perspective"
+    }
+  ],
+  "objects": [
+    {
+      "name": "scene",
+      "type": "obj",
+      "relativePath": "RoughGlasses-Indirect.obj"
+    }
+  ]
+}
