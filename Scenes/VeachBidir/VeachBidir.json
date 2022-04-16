@@ -1,0 +1,202 @@
+{
+  "name": "scene_0_5_0",
+  "transforms": [
+    {
+      "name": "__camera",
+      "matrix": [
+        0.00500708,
+        -0,
+        -0.999987,
+        0,
+        -0.00467005,
+        0.999989,
+        -2.34659E-05,
+        0,
+        0.999977,
+        0.00467011,
+        0.00502464,
+        0,
+        16.2155,
+        4.05167,
+        0.0114864,
+        1
+      ]
+    }
+  ],
+  "cameras": [
+    {
+      "name": "camera",
+      "type": "perspective",
+      "fov": 35,
+      "transform": "__camera"
+    }
+  ],
+  "materials": [
+    {
+      "type": "diffuse",
+      "name": "Diffuse",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      },
+      "thin": false
+    },
+    {
+      "type": "generic",
+      "name": "Glass",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          1,
+          1,
+          1
+        ]
+      },
+      "thin": false,
+      "roughness": 0,
+      "anisotropic": 0,
+      "diffuseTransmittance": 0,
+      "IOR": 1.5,
+      "metallic": 0,
+      "specularTint": 1,
+      "specularTransmittance": 1
+    },
+    {
+      "type": "generic",
+      "name": "Lamp",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          1,
+          1,
+          1
+        ]
+      },
+      "thin": false,
+      "roughness": 0.5,
+      "anisotropic": 0,
+      "diffuseTransmittance": 0,
+      "IOR": 4.9,
+      "metallic": 1,
+      "specularTint": 1,
+      "specularTransmittance": 0
+    },
+    {
+      "type": "diffuse",
+      "name": "Wood",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.32963,
+          0.257976,
+          0.150292
+        ]
+      },
+      "thin": false
+    }
+  ],
+  "objects": [
+    {
+      "name": "mesh_0",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh007.ply",
+      "material": "Lamp"
+    },
+    {
+      "name": "mesh_1",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh004.ply",
+      "material": "Diffuse"
+    },
+    {
+      "name": "mesh_2",
+      "type": "ply",
+      "relativePath": "data/meshes/__rectangle_2.ply",
+      "material": "Diffuse",
+      "emission": {
+        "value": [
+          523.258,
+          523.258,
+          523.258
+        ]
+      }
+    },
+    {
+      "name": "mesh_3",
+      "type": "ply",
+      "relativePath": "data/meshes/__rectangle_3.ply",
+      "material": "Diffuse",
+      "emission": {
+        "value": [
+          12048.2,
+          8605.84,
+          6196.21
+        ]
+      }
+    },
+    {
+      "name": "mesh_4",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh001.ply",
+      "material": "Lamp"
+    },
+    {
+      "name": "mesh_5",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh005.ply",
+      "material": "Lamp"
+    },
+    {
+      "name": "mesh_6",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh008.ply",
+      "material": "Diffuse"
+    },
+    {
+      "name": "mesh_7",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh002.ply",
+      "material": "Glass"
+    },
+    {
+      "name": "mesh_8",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh011.ply",
+      "material": "Diffuse"
+    },
+    {
+      "name": "mesh_9",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh003.ply",
+      "material": "Diffuse"
+    },
+    {
+      "name": "mesh_10",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh009.ply",
+      "material": "Diffuse"
+    },
+    {
+      "name": "mesh_11",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh006.ply",
+      "material": "Diffuse"
+    },
+    {
+      "name": "mesh_12",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh000.ply",
+      "material": "Wood"
+    },
+    {
+      "name": "mesh_13",
+      "type": "ply",
+      "relativePath": "data/meshes/Mesh010.ply",
+      "material": "Diffuse"
+    }
+  ]
+}

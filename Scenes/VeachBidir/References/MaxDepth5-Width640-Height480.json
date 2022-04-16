@@ -1,0 +1,7 @@
+{
+  "NumIterations": 4096,
+  "RenderTime": 2415246,
+  "FrameBufferTime": 51960,
+  "PathTracerTime": 1849743,
+  "LightTracerTime": 567560
+}

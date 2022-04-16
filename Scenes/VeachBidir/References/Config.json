@@ -1,0 +1,10 @@
+{ "Name": "VCM", "Settings": {
+  "BaseSeed": 571298512,
+  "NumIterations": 4096,
+  "MinDepth": 1,
+  "NumShadowRays": 1,
+  "EnableBsdfDI": true,
+  "RenderTechniquePyramid": false,
+  "EnableDenoiser": true,
+  "MaxDepth": 5
+}}
