@@ -1,0 +1,2539 @@
+{
+  "materials": [
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Blind-ends"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Blind-material"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.5173230767250061,
+          0.5173230767250061,
+          0.5173230767250061
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Blind-String"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.26675403118133545,
+          0.21685606241226196,
+          0.1744847148656845
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Blind-string-knob"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Blind-wood-strip"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.01032325904816389,
+          0.01738630048930645,
+          0.006370707415044308
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Book-Cover"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Book-Pages"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.5488413572311401,
+          0.5488413572311401,
+          0.5488413572311401
+        ]
+      },
+      "roughness": 0.4472135901451111,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Bread-bin-handle"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Tabletop-light.jpg"
+      },
+      "roughness": 0.2240000069141388,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Breadbin-front"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Worktopt-light.jpg"
+      },
+      "roughness": 0.2240000069141388,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Breadbin-sides"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Tabletop-light.jpg"
+      },
+      "roughness": 0.22400513291358948,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Breadbin-top"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.7071067690849304,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Burners"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.012215787544846535,
+          0.012215787544846535,
+          0.012215787544846535
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Burners-top"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.814028263092041,
+          0.814028263092041,
+          0.814028263092041
+        ]
+      },
+      "roughness": 0.03162277862429619,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "bush-logo.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cable"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Kitchen-carrot-uv.png"
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Carrots"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8549648523330688,
+          0.8549648523330688,
+          0.8549648523330688
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Ceiling"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Ceiling-light-fitting"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Chopping-Board.jpg"
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Chopping-board"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.014668293297290802,
+          0.014668293297290802,
+          0.014668293297290802
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Chopping-Kife-handle"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7873858213424683,
+          0.7873858213424683,
+          0.7873858213424683
+        ]
+      },
+      "roughness": 0.22360679507255554,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Chopping-Kn-edge"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.41092953085899353,
+          0.41092953085899353,
+          0.41092953085899353
+        ]
+      },
+      "roughness": 0.054772257804870605,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Chopping-Knife-blade"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.659763514995575,
+          0.6724432110786438,
+          0.6629334092140198
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Clay-Shader-white"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.013702081516385078,
+          0.013702085241675377,
+          0.013702084310352802
+        ]
+      },
+      "roughness": 0.24500000476837158,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.25,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cooker-black"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8006424307823181,
+          0.8006424307823181,
+          0.8006424307823181
+        ]
+      },
+      "roughness": 0.2828426957130432,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cooker-chrome"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.007192743010818958,
+          0.007192743010818958,
+          0.007192743010818958
+        ]
+      },
+      "roughness": 0.07100000232458115,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cooker-Fake-Glass"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.015993626788258553,
+          0.015993626788258553,
+          0.015993626788258553
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cooker-iron"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8148468732833862,
+          0.7529422640800476,
+          0.6866854429244995
+        ]
+      },
+      "roughness": 0.17299999296665192,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.8496791124343872,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cupboard-units"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/cushion-red.jpg"
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cushion-Ties"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/cushion-red.jpg"
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cushion1"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.6382598876953125,
+          0.6382598876953125,
+          0.6382598876953125
+        ]
+      },
+      "roughness": 0.37416574358940125,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Cuttelry"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.3672296106815338,
+          0.3672296106815338,
+          0.3672296106815338
+        ]
+      },
+      "roughness": 0.3872983455657959,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.5982028245925903,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Extrator-hood"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Floor-Wood"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.897077739238739,
+          0.897077739238739,
+          0.897077739238739
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Grout"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.626650869846344,
+          0.626650869846344,
+          0.626650869846344
+        ]
+      },
+      "roughness": 0.03162277862429619,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Handle-chrome.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Home"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          40.00000059604645,
+          30.663469433784485,
+          21.60966396331787
+        ]
+      },
+      "name": "Hud-lights"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8275435566902161,
+          0.8275435566902161,
+          0.8275435566902161
+        ]
+      },
+      "roughness": 0.3162277638912201,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Kettle-chrome"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.013409343548119068,
+          0.013409343548119068,
+          0.013409343548119068
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Kettle-handle"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.07227186113595963,
+          0.00856812484562397
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Kettle-red-metal"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7230299115180969,
+          0.7230299115180969,
+          0.7230299115180969
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Lamp-cable"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Lamp-inside"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Left-page"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7454046010971069,
+          0.1441284865140915,
+          0.0
+        ]
+      },
+      "roughness": 0.2240000069141388,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.25,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Light-lamp"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Main-Bulb"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.6499934196472168,
+          0.6499934196472168,
+          0.6499934196472168
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Metal-Handles"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.3869999945163727,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Microwave-back"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.01738630048930645,
+          0.01738630048930645,
+          0.01738630048930645
+        ]
+      },
+      "roughness": 0.1414213478565216,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Microwave-digital"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.5840784907341003,
+          0.5840784907341003,
+          0.5840784907341003
+        ]
+      },
+      "roughness": 0.4472135901451111,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Microwave-front-steel"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.011086617596447468,
+          0.011086617596447468,
+          0.011086617596447468
+        ]
+      },
+      "roughness": 0.1414213478565216,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Microwave-Glass"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.46719151735305786,
+          0.420080304145813,
+          0.3635166585445404
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Mushroom-ends"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.4479691684246063,
+          0.4165668785572052,
+          0.35466915369033813
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Mushrooms-whole"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.029396716505289078,
+          0.04695894569158554,
+          0.01063863467425108
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Pepper-Green"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8307700753211975,
+          0.17788846790790558,
+          0.0
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Pepper-Red"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.07755080610513687,
+          0.09083417803049088,
+          0.06658147275447845
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Pepper-stems"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7991029620170593,
+          0.35153263807296753,
+          0.0
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Pepper-Yellow"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Plates"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.02539221942424774,
+          0.02539221942424774,
+          0.02539221942424774
+        ]
+      },
+      "roughness": 0.3160000145435333,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.5,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Pot-handles"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.4019600450992584,
+          0.4019600450992584,
+          0.4019600450992584
+        ]
+      },
+      "roughness": 0.03162277862429619,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-dial-line.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-dialback"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7742582559585571,
+          0.7742582559585571,
+          0.7742582559585571
+        ]
+      },
+      "roughness": 0.03162277862429619,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-edges.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-glass.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.4868866205215454,
+          0.46573641896247864,
+          0.3671833574771881
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-handle.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-inside.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.4479691684246063,
+          0.37616977095603943,
+          0.16077159345149994
+        ]
+      },
+      "roughness": 0.03162277862429619,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-knob.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-metal-ring.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.7501915097236633,
+          0.5431126952171326
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-plastic.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.08352779597043991,
+          0.03561878576874733,
+          0.017283469438552856
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Radio-suround.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8006430864334106,
+          0.8006430864334106,
+          0.8006430864334106
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Skirting-Board"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Kitchen-mushroom-texture.png"
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Sliced-Mushroms"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Worktopt-light.jpg"
+      },
+      "roughness": 0.17299999296665192,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Small-worktop"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.429216593503952,
+          0.38747167587280273,
+          0.3764541745185852
+        ]
+      },
+      "roughness": 0.3162277638912201,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.7997432351112366,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Steel-Pot"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.7938934564590454,
+          0.746666669845581
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Table-Cross"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.02539221942424774,
+          0.02539221942424774,
+          0.02539221942424774
+        ]
+      },
+      "roughness": 0.44699999690055847,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Table-Mats"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Tabletop-light.jpg"
+      },
+      "roughness": 0.17299999296665192,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Table-Top"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Tea-Towel.jpg"
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Tea-Towel"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.5488413572311401,
+          0.5488413572311401,
+          0.5488413572311401
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Tea-Towel-loop"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Tiles"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.3931056261062622,
+          0.0,
+          0.0
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Tomatoes"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          4.800000071525574,
+          4.157126426696777,
+          3.449918746948242
+        ]
+      },
+      "name": "Unit_stip_lights"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.6382598876953125,
+          0.6382598876953125,
+          0.6382598876953125
+        ]
+      },
+      "roughness": 0.3162277638912201,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.8010269403457642,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Utensils"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7991032600402832,
+          0.7991029024124146,
+          0.7991030216217041
+        ]
+      },
+      "roughness": 0.2240000069141388,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Wall-socket1"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8549648523330688,
+          0.8549648523330688,
+          0.8549648523330688
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Walls"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.8411890864372253,
+          0.816618800163269,
+          0.8057214021682739
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Walls-other-colour"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "White-pot"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          6.875753998756409,
+          6.875753998756409,
+          7.0
+        ]
+      },
+      "name": "Window-Emitter-Front.001"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.7873865962028503,
+          0.7873865962028503,
+          0.7873865962028503
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Window-frame-etc"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.20791037380695343,
+          0.15470406413078308,
+          0.13594147562980652
+        ]
+      },
+      "roughness": 0.547722578048706,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Window-lock"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.0,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 1.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Wine-Glasses"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "rgb",
+        "value": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Wood-top-suround"
+    },
+    {
+      "type": "generic",
+      "baseColor": {
+        "type": "image",
+        "filename": "Textures/Worktopt-light.jpg"
+      },
+      "roughness": 0.5,
+      "anisotropic": 0.0,
+      "diffuseTransmittance": 0.0,
+      "IOR": 1.4500000476837158,
+      "metallic": 0.0,
+      "specularTintStrength": 0.0,
+      "specularTransmittance": 0.0,
+      "thin": false,
+      "emission": {
+        "type": "rgb",
+        "value": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "name": "Worktops-main"
+    }
+  ],
+  "transforms": [
+    {
+      "name": "camera",
+      "position": [
+        -0.36122921109199524,
+        1.9324750900268555,
+        -2.968289852142334
+      ],
+      "rotation": [
+        -7.950119123363237,
+        202.12260023107777,
+        -0.004218049105867829
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "cameras": [
+    {
+      "fov": 47.92497966122196,
+      "transform": "camera",
+      "name": "default",
+      "type": "perspective"
+    }
+  ],
+  "objects": [
+    {
+      "name": "scene",
+      "type": "fbx",
+      "relativePath": "CountryKitchen.fbx"
+    }
+  ]
+}
