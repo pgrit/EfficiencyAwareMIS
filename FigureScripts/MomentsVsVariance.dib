@@ -87,10 +87,28 @@ One such extreme case is shown in the simple scene below. A purely diffuse box i
 #!fsharp
 
 let scene = "BoxLargeLight"
+let costHeuristic = InitCostHeuristic scene
 let counts = [ 0f; 0.25f; 0.5f; 1f; 2f ]
 let moments, vars = List.unzip [ for c in counts -> GetErrors scene $"n={int(640f*480f*c):d6},c=00,m=0" ]
-let m = [ for i in 0..counts.Length-1 -> moments[i] * (1f + counts[i])]
-let v = [ for i in 0..counts.Length-1 -> vars[i] * (1f + counts[i])]
+let m = [ for i in 0..counts.Length-1 -> moments[i] * costHeuristic.EvaluatePerPixel(counts[i]*640f*480f, 0f, 0f, true)]
+let v = [ for i in 0..counts.Length-1 -> vars[i] * costHeuristic.EvaluatePerPixel(counts[i]*640f*480f, 0f, 0f, true)]
+
+[
+    Chart.Line(counts, m, Name="Moment")
+    Chart.Line(counts, v, Name="Variance")
+]
+|> Chart.combine
+|> Chart.withMarginSize(0, 0, 0, 0)
+|> Chart.withSize(500, 300)
+
+#!fsharp
+
+let scene = "BoxLargeLight"
+let costHeuristic = InitCostHeuristic scene
+let counts = [ 0f; 0.25f; 0.5f; 1f; 2f ]
+let moments, vars = List.unzip [ for c in counts -> GetErrors scene $"n={int(640f*480f*c):d6},c=00,m=0" ]
+let m = [ for i in 0..counts.Length-1 -> moments[i] * costHeuristic.EvaluatePerPixel(counts[i]*640f*480f, 0f, 0f, false)]
+let v = [ for i in 0..counts.Length-1 -> vars[i] * costHeuristic.EvaluatePerPixel(counts[i]*640f*480f, 0f, 0f, false)]
 
 [
     Chart.Line(counts, m, Name="Moment")
@@ -143,13 +161,6 @@ CompareMomentVarRatio "VeachBidir" $"n={640*480:d6},c=00,m=0" $"n={640*480:d6},c
 #!fsharp
 
 CompareMomentVarRatio "VeachBidir" $"n={640*480:d6},c=00,m=0" $"n={640*480:d6},c=00,m=1" 0f
-
-#!markdown
-
-#### Correlation-aware MIS
-
-Variance ratios with and without correlation-aware weights
-Ground truth optimization result with and without correlation-aware weights
 
 #!markdown
 

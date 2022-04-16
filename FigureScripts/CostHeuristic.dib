@@ -1,78 +1,252 @@
-#!csharp
+#!fsharp
 
-using System.IO;
-using System.Text.Json;
+#r "nuget: SimpleImageIO"
+#r "nuget: Plotly.NET, 2.0.0-preview.18"
+#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.GUI.dll"
+#load "Util.fsx"
+open Util
+open ImageLab.Flip
+open ImageLab.GUI.Util
+open SimpleImageIO
+open Plotly.NET
 
-class Stats {
-    public float PtTime, LtTime, AvgCamLen, AvgLightLen, AvgPhotonsPerQuery, PmBuildTime, LtShadowTime;
-    public float RenderTime;
-    public Stats(string sceneDir, string methodName) {
-        string json = File.ReadAllText(Path.Join(sceneDir, methodName, "Render.json"));
-        var root = JsonDocument.Parse(json).RootElement;
+#!fsharp
 
-        PtTime = (float) root.GetProperty("PathTracerTime").GetInt64();
-        LtTime = (float) root.GetProperty("LightTracerTime").GetInt64();
-        AvgCamLen = root.GetProperty("AverageCameraPathLength").GetSingle();
-        AvgLightLen = root.GetProperty("AverageLightPathLength").GetSingle();
-        AvgPhotonsPerQuery = root.GetProperty("AveragePhotonsPerQuery").GetSingle();
-        PmBuildTime = (float) root.GetProperty("PhotonBuildTime").GetInt64();
-        LtShadowTime = (float) root.GetProperty("LightTracerShadowTime").GetInt64();
-        RenderTime = (float) root.GetProperty("RenderTime").GetInt64();
-    }
-}
+let ComputePlotData scene (n:int option) (c: int option) (m: bool option) =
+    let json = File.ReadAllText(Path.Join("../VcmExperiment/Results/GroundTruth/", scene, "Costs.json"))
+    let times = System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.Dictionary<string, float[]>>(json)
 
-#!csharp
+    let pattern = @"n=(\d+),c=(\d+),m=(\d)"
+    let candidates = [ 
+        for c in times do
+            let groups = System.Text.RegularExpressions.Regex.Match(c.Key, pattern).Groups
+            (Int32.Parse(groups[1].Value), Int32.Parse(groups[2].Value), groups[3].Value = "1")
+    ]
 
-string dir = "../VcmExperiment/Results/CostMeasurements/Pool";
+    let GetTime n c m =
+        let t = times[$"n={n:d6},c={c:d2},m={if m then 1 else 0}"]
+        (t[0], t[1])
 
-var ptlt = new Stats(dir, "PTLT");
-var ptlt2 = new Stats(dir, "PTLT2");
-var ptltmerge = new Stats(dir, "PTLTMerge");
-var ptltmergequeryonly = new Stats(dir, "PTLTMergeQueryOnly");
-var ptlt2merge = new Stats(dir, "PTLT2Merge");
-var ptltcon = new Stats(dir, "PTLTConnect");
-var ptltcon16 = new Stats(dir, "PTLTConnect16");
-var ptlt2con = new Stats(dir, "PTLT2Connect");
+    let values = [
+        for can in candidates do
+            let (num, connect, merge) = can
+            if not (n.IsSome && num <> n.Value || m.IsSome && merge <> m.Value || c.IsSome && connect <> c.Value) then
+                let (time, heuristic) = GetTime num connect merge
+                ((if n.IsNone then num else (if c.IsNone then connect else (if merge then 1 else 0))), time, heuristic)
+    ] 
+    let sorted = List.sortBy (fun (n, _, _) -> n) values
+    let x = List.map (fun (n, _, _) -> n) sorted
+    let (_, firstTime, firstHeuristic) = sorted[0]
+    let a = List.map (fun (_, t, _) -> t / firstTime) sorted
+    let b = List.map (fun (_, _, h) -> h / firstHeuristic) sorted
+    let ratio = List.map (fun (_, t, h) -> (h / firstHeuristic) / (t / firstTime)) sorted
+    x, a, b, ratio
 
-ptlt2.RenderTime / ptlt.RenderTime
+let Variation scene (n:int option) (c: int option) (m: bool option) =
+    let x, a, b, ratio = ComputePlotData scene n c m
+    [
+        Chart.Line(x, a, Name="Time")
+        Chart.Line(x, b, Name="Heuristic")
+        Chart.Line(x, ratio, Name="Ratio")
+    ]
+    |> Chart.combine
+    |> Chart.withMarginSize(0, 0, 30, 0)
+    |> Chart.withSize(500, 300)
+    |> Chart.withTitle(scene)
 
-#!csharp
+#!fsharp
 
-float CostLight = 1.0f;
-float CostCamera = 1.0f;
-float CostConnect = 0.3f;
-float CostShade = 0.25f;
-float CostQuery = 0.045f;
-float CostPhotonBuild = 0.175f;
+open System.IO
+let allScenes = [
+    for path in Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth/") ->
+        Path.GetFileName(path)
+]
+let scenes = [
+    "CountryKitchen"
+    "LampCaustic"
+    "BoxLargeLight"
+    "RoughGlassesIndirect"
+]
 
-float avgLightLen = ptltmerge.AvgLightLen;
-float avgCamLen = ptltmerge.AvgCamLen;
-float numPixels = 640 * 480;
-float avgPhotonsPerQueryPerLightPath = ptltmerge.AvgPhotonsPerQuery / numPixels;
+#!fsharp
 
-float CostHeuristic(float n, float c, float m, bool neverMerge) {
-    // path tracing and light tracing incl. next event
-    float ltTime = CostLight * avgLightLen * n / numPixels;
-    float ptTime = avgCamLen * CostCamera;
-    float connectTime = avgCamLen * c * CostConnect;
+let json = System.Text.Json.JsonSerializer.Serialize(
+    Map [ for s in scenes -> s, ComputePlotData s (Some(640 * 480)) None (Some(true)) ]
+)
+System.IO.File.WriteAllText("PlotData.json", json)
+System.Diagnostics.Process.Start("python", "./CostPlot.py PlotData.json Plot1.pdf $c$").WaitForExit()
 
-    // building the photon map, ammortized over all pixels.
-    float buildTime = n * avgLightLen > 1
-        ? CostPhotonBuild * avgLightLen * n * MathF.Log(avgLightLen * n) / numPixels
-        : 0.0f;
+#!fsharp
 
-    // performing the merges
-    float queryTime = n * avgLightLen > 1
-        ? CostQuery * avgCamLen * MathF.Log(n * avgLightLen)
-        : 0.0f;
-    float mergeShadeTime = CostShade * avgPhotonsPerQueryPerLightPath * avgCamLen * n;
-    float mergeTime = (queryTime + mergeShadeTime) * m;
+let json = System.Text.Json.JsonSerializer.Serialize(
+    Map [ for s in scenes -> s, ComputePlotData s  (None) (Some 4) (Some true) ]
+)
+System.IO.File.WriteAllText("PlotData.json", json)
+System.Diagnostics.Process.Start("python", "./CostPlot.py PlotData.json Plot2.pdf $n$").WaitForExit()
 
-    float result = ptTime + ltTime + connectTime;
-    if (!neverMerge) result += buildTime + mergeTime; // PM is only built if merging is enabled anywhere
+#!fsharp
 
-    Console.WriteLine($"{ptTime} + {ltTime} + {connectTime} + {buildTime} + {mergeTime}");
-    return result;
-}
+let json = System.Text.Json.JsonSerializer.Serialize(
+    Map [ for s in scenes -> s, ComputePlotData s  (Some(640 * 480)) (Some 4) (None) ]
+)
+System.IO.File.WriteAllText("PlotData.json", json)
+System.Diagnostics.Process.Start("python", "./CostPlot.py PlotData.json Plot3.pdf $\\chi$").WaitForExit()
 
-CostHeuristic(numPixels * 2, 0, 0, true) / CostHeuristic(numPixels, 0, 0, true)
+#!markdown
+
+# Cost heuristic evaluation
+In this notebook, we evaluate the approximation error in our cost heuristic by comparing it to the actual render time. Then we show that the impact of this approximation error on the optimization outcome is very minor.
+We show three representative test scenes. The behaviour is very similar across all other scenes.
+
+## Plotting time vs heuristic
+We start by plotting the render time, our cost heuristic, and the ratio between the two as a function of the three parameters: number of connections, number of light paths, binary merge decision.
+
+The exact value of the heuristic is irrelevant: all cost heuristics proportional to the render time yield the optimal result. Hence, we normalize the plots below to visualize the increase in time / heuristic cost compared to the smallest sample count.
+
+In addition to the time and our heuristic, we also plot the ratio between the two. If a perfect match is achieved, the red and blue lines (heuristic and time, respectively) perfectly align and the green line (ratio between the two) is constant at 1.
+
+#!markdown
+
+### Heuristic vs render time as a function of connection count
+
+#!fsharp
+
+for scene in scenes do display(Variation scene (Some(640 * 480)) None (Some(true))) |> ignore
+
+#!markdown
+
+### Cost vs heuristic as a function of the number of light paths
+
+#!fsharp
+
+for scene in scenes do display(Variation scene (None) (Some 4) (Some true)) |> ignore
+
+#!markdown
+
+### Cost vs heuristic as a function of whether to merge or not
+
+#!fsharp
+
+for scene in scenes do display(Variation scene (Some(640 * 480)) (Some 4) (None)) |> ignore
+
+#!markdown
+
+## Ablation study
+
+In some scenes, our heuristic is a perfect match to the actual render time. But because there are many factors at play, this is not always the case. Across all our scenes, the heuristic approximated the true cost within $\pm30\%$.
+
+Below, we arbitrarily distort the cost heuristic, by increasing or decreasing the merge-cost hyperparameter, and compute the resulting optimization outcome. We show the resulting masks, sample counts, and equal-time errors (with precomputed moments) for three scenes.
+
+### Rough Glasses Indirect
+- Our heuristic is a perfect match for the merge cost (see plots above)
+- Changing by a factor of 2 has almost no effect on the optimization
+- Changing by a factor of 10 produces slightly worse results
+
+### Lamp Caustic
+- Our heuristic underestimates the cost of merging
+- Reducing the cost has almost no effect
+- Increasing the cost produces slightly worse results (factor or 2) and much worse (factor of 10)
+
+### Country Kitchen
+Pretty much the same as lamp caustic but in a worst-case setting: The optimal configuration uses only a tiny number of bidirectional samples. Artificially increasing the cost of merging quickly deteriorates to just path tracing.
+
+### Conclusion
+- our heuristic is a close match across all our scenes
+- even much worse approximations of the cost (within the same order of magnitude) produce similar results
+
+#!fsharp
+
+let GetRender scene suffix mode =
+    let dirname = "../VcmExperiment/Results/EqualTime/" + scene + $"/GroundTruth{mode}60s" + suffix
+    new RgbImage(dirname + $"/Render.exr") :> ImageBase
+
+let GetReference scene = 
+    new RgbImage("../VcmExperiment/Results/EqualTime/" + scene + "/Reference.exr") :> ImageBase
+
+let GetError scene suffix mode =
+    Metrics.RelMSE_OutlierRejection(GetRender scene suffix mode, GetReference scene, 0.1f)
+
+let GetMergeMasks scene suffix prefix =
+    let dirname = "../VcmExperiment/Results/GroundTruth/" + scene
+    let masks = Layers.LoadFromFile(dirname + $"/{prefix}Masks{suffix}.exr")
+    let lines = System.IO.File.ReadAllLines(dirname + $"/{prefix}GlobalCounts{suffix}.txt")
+    let numPathsVar = Int32.Parse(lines[14])
+    let numConnectVar = Int32.Parse(lines[15])
+    let numPathsMoment = Int32.Parse(lines[16])
+    let numConnectMoment = Int32.Parse(lines[17])
+    masks["merge-var"], masks["merge-moment"], numPathsVar, numConnectVar, numPathsMoment, numConnectMoment
+
+let CostAblation scene exposure mode =
+    let correct = GetMergeMasks scene "" ""
+    let x01 = GetMergeMasks scene "CostMerge0.1" ""
+    let x05 = GetMergeMasks scene "CostMerge0.5" ""
+    let x2 = GetMergeMasks scene "CostMerge2" ""
+    let x10 = GetMergeMasks scene "CostMerge10" ""
+
+    let varmask          (m, _, _, _, _, _) = m 
+    let momentmask       (_, m, _, _, _, _) = m
+    let varnumpaths      (_, _, c, _, _, _) = c
+    let varnumconnect    (_, _, _, c, _, _) = c
+    let momentnumpaths   (_, _, _, _, c, _) = c
+    let momentnumconnect (_, _, _, _, _, c) = c
+
+    let mask = if mode = "Moment" then momentmask else varmask
+    let numPaths = if mode = "Moment" then momentnumpaths else varnumpaths
+    let numConnect = if mode = "Moment" then momentnumconnect else varnumconnect
+
+    let mutable html = ""
+
+    html <- html + Flip.Make[|
+        struct ("Correct cost", mask correct)
+        struct ("Merges 10x cheaper", mask x01)
+        struct ("Merges 2x cheaper", mask x05)
+        struct ("Merges 2x more expensive", mask x2)
+        struct ("Merges 10x more expensive", mask x10)
+    |]
+
+    html <- html + $"<p>n, c with correct cost: {numPaths correct}, {numConnect correct}</p>"
+    html <- html + $"<p>n, c with 10x cheaper: {numPaths x01}, {numConnect x01}</p>"
+    html <- html + $"<p>n, c with 2x cheaper: {numPaths x05}, {numConnect x05}</p>"
+    html <- html + $"<p>n, c with 2x more expensive: {numPaths x2}, {numConnect x2}</p>"
+    html <- html + $"<p>n, c with 10x more expensive: {numPaths x10}, {numConnect x10}</p>"
+
+    let mapExposure = new ToneMapExposure()
+    mapExposure.Exposure <- exposure
+    html <- html + Flip.Make(mapExposure, [|
+        struct ("Correct cost", GetRender scene "" mode)
+        struct ("Merges 10x cheaper", GetRender scene "CostMerge0.1" mode)
+        struct ("Merges 2x cheaper", GetRender scene "CostMerge0.5" mode)
+        struct ("Merges 2x more expensive", GetRender scene "CostMerge2" mode)
+        struct ("Merges 10x more expensive", GetRender scene "CostMerge10" mode)
+    |])
+
+    let mutable errors = [
+        GetError scene "" mode
+        GetError scene "CostMerge0.1" mode
+        GetError scene "CostMerge0.5" mode
+        GetError scene "CostMerge2" mode
+        GetError scene "CostMerge10" mode
+    ] 
+    errors <- List.map (fun e -> errors[0] / e) errors
+
+    html <- html + $"<p>Speed-up with correct cost: {errors[0]}</p>"
+    html <- html + $"<p>Speed-up with 10x cheaper: {errors[1]}</p>"
+    html <- html + $"<p>Speed-up with 2x cheaper: {errors[2]}</p>"
+    html <- html + $"<p>Speed-up with 2x more expensive: {errors[3]}</p>"
+    html <- html + $"<p>Speed-up with 10x more expensive: {errors[4]}</p>"
+
+    HTML(html)
+
+#!fsharp
+
+CostAblation "LampCaustic" 0f "Moment"
+
+#!fsharp
+
+CostAblation "CountryKitchen" 0f "Moment"
+
+#!fsharp
+
+CostAblation "RoughGlassesIndirect" 0f "Moment"

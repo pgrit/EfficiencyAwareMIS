@@ -1,0 +1,78 @@
+#!csharp
+
+using System.IO;
+using System.Text.Json;
+
+class Stats {
+    public float PtTime, LtTime, AvgCamLen, AvgLightLen, AvgPhotonsPerQuery, PmBuildTime, LtShadowTime;
+    public float RenderTime;
+    public Stats(string sceneDir, string methodName) {
+        string json = File.ReadAllText(Path.Join(sceneDir, methodName, "Render.json"));
+        var root = JsonDocument.Parse(json).RootElement;
+
+        PtTime = (float) root.GetProperty("PathTracerTime").GetInt64();
+        LtTime = (float) root.GetProperty("LightTracerTime").GetInt64();
+        AvgCamLen = root.GetProperty("AverageCameraPathLength").GetSingle();
+        AvgLightLen = root.GetProperty("AverageLightPathLength").GetSingle();
+        AvgPhotonsPerQuery = root.GetProperty("AveragePhotonsPerQuery").GetSingle();
+        PmBuildTime = (float) root.GetProperty("PhotonBuildTime").GetInt64();
+        LtShadowTime = (float) root.GetProperty("LightTracerShadowTime").GetInt64();
+        RenderTime = (float) root.GetProperty("RenderTime").GetInt64();
+    }
+}
+
+#!csharp
+
+string dir = "../VcmExperiment/Results/CostMeasurements/Pool";
+
+var ptlt = new Stats(dir, "PTLT");
+var ptlt2 = new Stats(dir, "PTLT2");
+var ptltmerge = new Stats(dir, "PTLTMerge");
+var ptltmergequeryonly = new Stats(dir, "PTLTMergeQueryOnly");
+var ptlt2merge = new Stats(dir, "PTLT2Merge");
+var ptltcon = new Stats(dir, "PTLTConnect");
+var ptltcon16 = new Stats(dir, "PTLTConnect16");
+var ptlt2con = new Stats(dir, "PTLT2Connect");
+
+ptlt2.RenderTime / ptlt.RenderTime
+
+#!csharp
+
+float CostLight = 1.0f;
+float CostCamera = 1.0f;
+float CostConnect = 0.3f;
+float CostShade = 0.25f;
+float CostQuery = 0.045f;
+float CostPhotonBuild = 0.175f;
+
+float avgLightLen = ptltmerge.AvgLightLen;
+float avgCamLen = ptltmerge.AvgCamLen;
+float numPixels = 640 * 480;
+float avgPhotonsPerQueryPerLightPath = ptltmerge.AvgPhotonsPerQuery / numPixels;
+
+float CostHeuristic(float n, float c, float m, bool neverMerge) {
+    // path tracing and light tracing incl. next event
+    float ltTime = CostLight * avgLightLen * n / numPixels;
+    float ptTime = avgCamLen * CostCamera;
+    float connectTime = avgCamLen * c * CostConnect;
+
+    // building the photon map, ammortized over all pixels.
+    float buildTime = n * avgLightLen > 1
+        ? CostPhotonBuild * avgLightLen * n * MathF.Log(avgLightLen * n) / numPixels
+        : 0.0f;
+
+    // performing the merges
+    float queryTime = n * avgLightLen > 1
+        ? CostQuery * avgCamLen * MathF.Log(n * avgLightLen)
+        : 0.0f;
+    float mergeShadeTime = CostShade * avgPhotonsPerQueryPerLightPath * avgCamLen * n;
+    float mergeTime = (queryTime + mergeShadeTime) * m;
+
+    float result = ptTime + ltTime + connectTime;
+    if (!neverMerge) result += buildTime + mergeTime; // PM is only built if merging is enabled anywhere
+
+    Console.WriteLine($"{ptTime} + {ltTime} + {connectTime} + {buildTime} + {mergeTime}");
+    return result;
+}
+
+CostHeuristic(numPixels * 2, 0, 0, true) / CostHeuristic(numPixels, 0, 0, true)

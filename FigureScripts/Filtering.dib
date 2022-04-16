@@ -22,13 +22,27 @@ let dilate radius (img:MonochromeImage) =
     Filter.Dilation(img, buf, radius)
     buf
 
-let dilateBlur dilateRadius blurRadius (img:MonochromeImage) =
-    let buf = new MonochromeImage(img.Width, img.Height)
-    Filter.Dilation(img, buf, dilateRadius)
-    Filter.RepeatedBox(buf, img, blurRadius)
-    img
+let dilateBlur dilateRadius blurRadius = dilate dilateRadius >> blur blurRadius
 
 let noop img = img
+
+let tile size (img:MonochromeImage) = 
+    let buf = new MonochromeImage(img.Width, img.Height)
+    for tileRow in 0..img.Height / size - 1 do
+        for tileCol in 0..img.Width / size - 1 do
+            let mutable avg = 0.0f
+            let mutable num = 0f
+            let lastRow = min ((tileRow + 1) * size) img.Height
+            let lastCol = min ((tileCol + 1) * size) img.Width
+            for row in tileRow * size .. lastRow - 1 do
+                for col in tileCol * size .. lastCol - 1 do
+                    avg <- avg + img.GetPixel(col, row)
+                    num <- num + 1f
+            avg <- avg / num
+            for row in tileRow * size .. lastRow - 1 do
+                for col in tileCol * size .. lastCol - 1 do
+                    buf.SetPixel(col, row, avg)
+    buf
 
 #!markdown
 
@@ -94,6 +108,7 @@ EvaluateFilters "RoughGlasses"
     "None", noop
     "Blur1", blur 1
     "Blur3", blur 3
+    "Blur8", blur 8
     "Blur10", blur 10
     "Blur100", blur 100
 ]

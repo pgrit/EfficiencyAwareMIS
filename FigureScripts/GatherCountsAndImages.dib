@@ -1,0 +1,48 @@
+#!fsharp
+
+open System.IO
+open System.Text.Json
+
+#!fsharp
+
+let sceneDirs = Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth")
+JsonSerializer.Serialize
+<|
+[ for s in sceneDirs do
+    let lines = File.ReadAllLines(s + "/GlobalCounts.txt")
+    Map [ Path.GetFileName(s), Map [
+        ("n", lines[16])
+        ("c", lines[17])
+    ]]
+]
+
+#!fsharp
+
+// variance counts
+let sceneDirs = Directory.EnumerateDirectories("../VcmExperiment/Results/GroundTruth")
+JsonSerializer.Serialize
+<|
+[ for s in sceneDirs do
+    let lines = File.ReadAllLines(s + "/GlobalCounts.txt")
+    Map [ Path.GetFileName(s), Map [
+        ("n", lines[14])
+        ("c", lines[15])
+    ]]
+]
+
+#!fsharp
+
+let sceneDirs = Directory.EnumerateDirectories("../VcmExperiment/Results/EqualTime")
+for s in sceneDirs do 
+    Directory.CreateDirectory("GroundTruthResults/" + Path.GetFileName(s) + "/") |> ignore
+    for f in Directory.EnumerateFiles(s + "/GroundTruthMoment60s") do
+        File.Copy(f, "GroundTruthResults/" + Path.GetFileName(s) + "/" + Path.GetFileName(f))
+
+#!fsharp
+
+// variance
+let sceneDirs = Directory.EnumerateDirectories("../VcmExperiment/Results/EqualTime")
+for s in sceneDirs do 
+    Directory.CreateDirectory("GroundTruthResultsVariance/" + Path.GetFileName(s) + "/") |> ignore
+    for f in Directory.EnumerateFiles(s + "/GroundTruthVariance60s") do
+        File.Copy(f, "GroundTruthResultsVariance/" + Path.GetFileName(s) + "/" + Path.GetFileName(f))

@@ -1,0 +1,71 @@
+#!fsharp
+
+// Image viewer
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
+#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.GUI.dll"
+#r "nuget: SimpleImageIO"
+
+// Plotting stuff
+#r "nuget: Plotly.NET, 2.0.0-preview.18"
+#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
+
+open Plotly.NET
+open System.IO
+open SimpleImageIO
+open ImageLab.Flip
+open ImageLab.GUI.Util
+
+HTML(Flip.MakeHeader())
+
+#!fsharp
+
+let ShowResults scene exposure =
+    let mapExposure = new ToneMapExposure()
+    mapExposure.Exposure <- exposure
+
+    let dir = "../VcmExperiment/Results/EqualTime/" + scene
+    let reference = new RgbImage(Path.Join(dir, "Reference.exr"))
+
+    let methods = [
+        "Pt60s"
+        "OurVcm60s"
+        "OurVcmStartPT60s"
+        "VanillaVcm60s"
+        "VanillaBdpt60s"
+    ]
+    let images = [ for m in methods -> new RgbImage(Path.Join(dir, m, "Render.exr")) ]
+    let flip = [|
+        for i in 0..methods.Length-1 -> struct(methods[i], images[i] :> ImageBase)
+    |]
+    let errors = [ for i in images -> Metrics.RelMSE_OutlierRejection(i, reference) ]
+    let speedups = [ for e in errors -> errors[0] / e, errors[3] / e ]
+    
+    (Map [
+        for i in 0..methods.Length-1 -> methods[i], speedups[i]
+    ]).Display() |> ignore
+
+    HTML(Flip.Make(mapExposure, flip)).Display() |> ignore
+
+#!fsharp
+
+ShowResults "HotLivingMod" 1f
+
+#!fsharp
+
+ShowResults "Pool" -4f
+
+#!fsharp
+
+ShowResults "RoughGlassesIndirect" 1f
+
+#!fsharp
+
+ShowResults "CountryKitchen" 1f
+
+#!fsharp
+
+ShowResults "VeachBidir" 1f
+
+#!fsharp
+
+ShowResults "ModernLivingRoom" 1f

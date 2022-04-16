@@ -165,12 +165,8 @@ let Optimize costHeuristic moments filtered reference =
 
     merge, connect, globalDecision
 
-let OptimizeWithFilter scene exposure filterMoments filterMergeMask filterConnectMask =
-    let dir = "../VcmExperiment/Results/Filtering/" + scene
-    let reference = new RgbImage(Path.Join(dir, "Reference.exr"))
-    let render = new RgbImage(Path.Join(dir, "MomentEstimator", "Render.exr"))
-
-    // Initialize the cost heuristic statistics
+let InitCostHeuristic scene =
+    let dir = "../VcmExperiment/Results/GroundTruth/" + scene
     let path = Path.Join(dir, "MomentEstimator", "Render.json")
     let json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path))
     let avgCamLen = json.RootElement.GetProperty("AverageCameraPathLength").GetSingle()
@@ -178,6 +174,13 @@ let OptimizeWithFilter scene exposure filterMoments filterMergeMask filterConnec
     let avgPhoton = json.RootElement.GetProperty("AveragePhotonsPerQuery").GetSingle()
     let costHeuristic = new CostHeuristic()
     costHeuristic.UpdateStats(width * height, width * height, avgCamLen, avgLightLen, avgPhoton)
+    costHeuristic
+
+let OptimizeWithFilter scene exposure filterMoments filterMergeMask filterConnectMask =
+    let dir = "../VcmExperiment/Results/Filtering/" + scene
+    let reference = new RgbImage(Path.Join(dir, "Reference.exr"))
+
+    let costHeuristic = InitCostHeuristic scene
 
     // Gather moment estimates
     let momentLayers = Layers.LoadFromFile(Path.Join(dir, "MomentEstimator", "RenderMoments.exr"))
