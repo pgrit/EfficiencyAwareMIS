@@ -1,0 +1,9 @@
+{ "Name": "PathTracer", "Settings": {
+  "BaseSeed": 571298512,
+  "TotalSpp": 4096,
+  "MinDepth": 1,
+  "NumShadowRays": 1,
+  "EnableBsdfDI": true,
+  "RenderTechniquePyramid": false,
+  "MaxDepth": 10
+}}
