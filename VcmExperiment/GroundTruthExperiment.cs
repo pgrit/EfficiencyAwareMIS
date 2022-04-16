@@ -4,6 +4,10 @@ using System.Text.Json;
 
 namespace EfficiencyAwareMIS.VcmExperiment;
 
+/// <summary>
+/// Computes estimates of variances or second moments, denoises them, and runs our optimizer in various
+/// configurations. This takes a lot of time.
+/// </summary>
 class GroundTruthExperiment : Experiment {
     public int NumIterations = 128;
 
@@ -101,6 +105,12 @@ class GroundTruthExperiment : Experiment {
         var globalMoment = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
             numConnectionsCandidates, costHeuristic, mergeMaskMoment.GetPixel, connectMaskMoment.GetPixel, true, true);
 
+        // Optimize also the number of connections globally
+        var globalConnectVar = VcmOptimizer.OptimizePerImage(variances, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, mergeMaskVar.GetPixel, connectMaskVar.GetPixel, false, true);
+        var globalConnectMoment = VcmOptimizer.OptimizePerImage(moments, pixelIntensities, numLightPathCandidates,
+            numConnectionsCandidates, costHeuristic, mergeMaskMoment.GetPixel, connectMaskMoment.GetPixel, false, true);
+
         // Compare to purely global optimization
         var pureGlobalVar = VcmOptimizer.OptimizePerImage(variances, pixelIntensities, numLightPathCandidates,
             numConnectionsCandidates, costHeuristic, null, null, false, false);
@@ -120,7 +130,9 @@ class GroundTruthExperiment : Experiment {
             $"{globalVarAbs.Item1}\n{(globalVarAbs.Item3.HasValue ? 0 : 1)}\n" +
             $"{globalMomentAbs.Item1}\n{(globalMomentAbs.Item3.HasValue ? 0 : 1)}\n" +
             $"{pureGlobalVar.Item1}\n" + $"{pureGlobalVar.Item2.Value}\n" + $"{pureGlobalVar.Item3.Value}\n" +
-            $"{pureGlobalMoment.Item1}\n" + $"{pureGlobalMoment.Item2.Value}\n" + $"{pureGlobalMoment.Item3.Value}\n");
+            $"{pureGlobalMoment.Item1}\n" + $"{pureGlobalMoment.Item2.Value}\n" + $"{pureGlobalMoment.Item3.Value}\n" +
+            $"{globalConnectVar.Item1}\n{globalConnectVar.Item2}\n" +
+            $"{globalConnectMoment.Item1}\n{globalConnectMoment.Item2}\n");
     }
 
     class Images {
@@ -286,9 +298,5 @@ class GroundTruthExperiment : Experiment {
 
         Images dataNoCAMIS = new(candidates, NumIterations, dir, "NoCAMIS-");
         EvaluateGroundTruth("NoCAMIS-", dir, dataNoCAMIS);
-    }
-
-    public override void OnDone(string workingDirectory) {
-        // Generate overview figure ...
     }
 }

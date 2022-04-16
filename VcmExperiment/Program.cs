@@ -1,24 +1,22 @@
 using EfficiencyAwareMIS.VcmExperiment;
 
-// TODO move scenes into this repository
-SceneRegistry.AddSource("../../GuidingExperiments/Scenes");
+SceneRegistry.AddSource("../Scenes");
 
 List<(string, int)> scenes = new() {
-    // Most interesting
     ("HotLivingMod", 10),
     ("VeachBidir", 5),
-    ("TargetPractice", 5),
     ("ModernLivingRoom", 10),
     ("Pool", 5),
-    ("House", 5),
-    ("LampCaustic", 10),
-    ("RoughGlasses", 10),
     ("RoughGlassesIndirect", 10),
     ("CountryKitchen", 5),
-    ("LampCausticNoShade", 10),
-    ("HomeOffice", 5),
 
-    // Other scenes
+    // Other scenes (not in this repository)
+    // ("LampCaustic", 10),
+    // ("LampCausticNoShade", 10),
+    // ("TargetPractice", 5),
+    // ("RoughGlasses", 10),
+    // ("HomeOffice", 5),
+    // ("House", 5),
     // ("LowPoly", 5),
     // ("Bedroom", 5),
     // ("GlassOfWater", 10),

@@ -5,23 +5,38 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 /// worthwhile, switches to it and expands the set of candidates for one more optimization.
 /// </summary>
 class OnDemandVcm : AdaptiveVcm {
+    bool inPilotPhase = true;
+
     protected override void OnBeforeRender() {
         base.OnBeforeRender();
 
-        // Adapt the candidates
+        // Adapt the candidates: only consider a small set that is likely to be better than path tracing
+        NumLightPathCandidates = new[] { 0.5f, 1f };
+        NumConnectionsCandidates = new[] { 0, 1 };
+        UsePerPixelConnections = false;
+        UsePerPixelMerges = false;
 
-        // TODO cache current config, replace temporarily with: PT, vanilla BDPT (with lower num light paths and higher num connect), vanilla VCM
+        // Start with pure path tracing
+        NumLightPaths = 0;
+        NumConnections = 0;
+        UseMergesGlobally = false;
 
-        // TODO switch temporarily to global optimization
-
-        // TODO force all bidir off
-
-        // TODO set MaxNumUpdates temporarily to unbounded / rather high (pretty cheap in the PT pilot)
+        inPilotPhase = true;
     }
 
     protected override void OnEndIteration(uint iteration) {
         base.OnEndIteration(iteration);
 
-        // TODO check if something bidir was turned on. IF yes: restore old candidates and per-pixel settings, max num updates
+        if (NumLightPaths != 0 && inPilotPhase) { // A bidirectional technique was enabled
+            NumLightPathCandidates = new[] { 0.25f, 0.5f, 0.75f, 1.0f, 2.0f };
+            NumConnectionsCandidates = new[] { 0, 1, 2, 4, 8 };
+            UsePerPixelConnections = false;
+            UsePerPixelMerges = true;
+            inPilotPhase = false;
+
+            Scene.FrameBuffer.Clear();
+
+            InitCandidates();
+        }
     }
 }

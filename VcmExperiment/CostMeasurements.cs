@@ -15,54 +15,54 @@ class CostMeasurements : Experiment {
     }
 
     public override List<Method> MakeMethods() => new() {
-        // new("PTLT", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 0,
-        //     NumLightPaths = null,
-        //     EnableMerging = false
-        // }),
-        // new("PTLT2", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 0,
-        //     NumLightPaths = 640 * 480 * 2,
-        //     EnableMerging = false
-        // }),
-        // new("PTLTMerge", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 0,
-        //     NumLightPaths = null,
-        //     EnableMerging = true
-        // }),
-        // new("PTLTMergeQueryOnly", new MergeHack() {
-        //     NumIterations = 16,
-        //     NumConnections = 0,
-        //     NumLightPaths = null,
-        //     EnableMerging = true
-        // }),
-        // new("PTLT2Merge", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 0,
-        //     NumLightPaths = 640 * 480 * 2,
-        //     EnableMerging = true
-        // }),
-        // new("PTLTConnect", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 1,
-        //     NumLightPaths = null,
-        //     EnableMerging = false
-        // }),
-        // new("PTLTConnect16", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 16,
-        //     NumLightPaths = null,
-        //     EnableMerging = false
-        // }),
-        // new("PTLT2Connect", new PathLengthEstimatingVcm() {
-        //     NumIterations = 16,
-        //     NumConnections = 1,
-        //     NumLightPaths = 640 * 480 * 2,
-        //     EnableMerging = false
-        // }),
+        new("PTLT", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 0,
+            NumLightPaths = null,
+            EnableMerging = false
+        }),
+        new("PTLT2", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 0,
+            NumLightPaths = 640 * 480 * 2,
+            EnableMerging = false
+        }),
+        new("PTLTMerge", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 0,
+            NumLightPaths = null,
+            EnableMerging = true
+        }),
+        new("PTLTMergeQueryOnly", new MergeHack() {
+            NumIterations = 16,
+            NumConnections = 0,
+            NumLightPaths = null,
+            EnableMerging = true
+        }),
+        new("PTLT2Merge", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 0,
+            NumLightPaths = 640 * 480 * 2,
+            EnableMerging = true
+        }),
+        new("PTLTConnect", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 1,
+            NumLightPaths = null,
+            EnableMerging = false
+        }),
+        new("PTLTConnect16", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 16,
+            NumLightPaths = null,
+            EnableMerging = false
+        }),
+        new("PTLT2Connect", new PathLengthEstimatingVcm() {
+            NumIterations = 16,
+            NumConnections = 1,
+            NumLightPaths = 640 * 480 * 2,
+            EnableMerging = false
+        }),
     };
 
     class Stats {

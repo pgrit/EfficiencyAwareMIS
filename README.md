@@ -3,21 +3,25 @@
 Implementation of the paper "Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering". This is a cleaned re-implementation of the original code with additional improvements. This is not the version that was used to generate the results in the paper. Results are similar but not identical.
 
 Compared to the paper, the main changes are:
-- Number of connections can be controlled on a per-pixel basis
+- Number of connections can be controlled on a per-pixel basis (experimental, disabled by default)
 - A simple iterative update scheme: the optimizer is run multiple times with exponentially growing time between subsequent updates
 - Outlier rejection: the 0.1% of pixels with highest second moment are ignored when optimizing per-image sample counts
-- A more elaborate cost heuristic that incorporates the cost of building the photon map acceleration structure (experimental, seems to have little to no effect on the optimization outcome)
+- A more elaborate cost heuristic that incorporates the cost of building the photon map acceleration structure (experimental, the old heuristic is also implemented but commented out in [VcmExperiment/CostHeuristic.cs](VcmExperiment/CostHeuristic.cs))
 
 ## Dependencies
 
-
+- [.NET 6.0](https://dotnet.microsoft.com/download)
 
 ## Running the experiments
 
-TODO how to run
+There are multiple experiments in this repository. By default, all except for a simple equal-time comparison are commented out in [Program.cs](VcmExperiment/Program.cs). Downloading the dependencies, building, and running the experiment(s) is as simple as:
 
-TODO how to inspect results
+```sh
+cd VcmExperiment
+dotnet run -c Release
+```
 
+The rendered results can be viewed by manually opening the .exr files in `VcmExperiment/Results/`. There is also a [.NET interactive](https://github.com/dotnet/interactive) notebook, [FigureScripts/EqualTime.dib](FigureScripts/EqualTime.dib), that loads the rendered images, computes the speed-ups in terms of relMSE, and displays the images in interactive viewers.
 
 ## Project structure
 

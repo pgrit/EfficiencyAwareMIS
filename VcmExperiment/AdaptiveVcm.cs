@@ -13,7 +13,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
     /// <summary>
     /// Candidates for the number of bidirectional connections per camera subpath vertex
     /// </summary>
-    public int[] NumConnectionsCandidates = new[] { 0, 1, 2, 4, 8, 16 };
+    public int[] NumConnectionsCandidates = new[] { 0, 1, 2, 4, 8 };
 
     /// <summary>
     /// If set to true, writes all candidate moment images to a layered .exr file after rendering is done,
@@ -94,11 +94,11 @@ class AdaptiveVcm : MomentEstimatingVcm {
     public MonochromeImage MergeMask = null;
     public MonochromeImage ConnectMask = null;
 
-    bool? useMergesGlobal;
+    protected bool? UseMergesGlobally = null;
 
     protected override float GetPerPixelMergeProbability(Vector2 pixel) {
         if (!EnableMerging) return 0.0f;
-        if (MergeMask == null) return useMergesGlobal.GetValueOrDefault(true) ? 1.0f : 0.0f;
+        if (MergeMask == null) return UseMergesGlobally.GetValueOrDefault(true) ? 1.0f : 0.0f;
         return MergeMask.GetPixel((int)pixel.X, (int)pixel.Y);
     }
 
@@ -107,7 +107,7 @@ class AdaptiveVcm : MomentEstimatingVcm {
         return ConnectMask.GetPixel((int)pixel.X, (int)pixel.Y);
     }
 
-    void InitCandidates() {
+    protected void InitCandidates() {
         int width = Scene.FrameBuffer.Width;
         int height = Scene.FrameBuffer.Height;
         int numPixels = Scene.FrameBuffer.Width * Scene.FrameBuffer.Height;
@@ -132,16 +132,16 @@ class AdaptiveVcm : MomentEstimatingVcm {
 
         // Pure path tracer: 0 light paths are only allowed if merges and connections are also disabled
         AddCandidate(new(0, 0, false));
-
-        numUpdates = 0;
-        Scene.FrameBuffer.MetaData["PerImageDecision"] = new List<Candidate>();
     }
 
     protected override void OnStartIteration(uint iteration) {
         base.OnStartIteration(iteration);
 
-        if (iteration == 0) InitCandidates();
-        else if (numUpdates < MaxNumUpdates) {
+        if (iteration == 0) {
+            InitCandidates();
+            numUpdates = 0;
+            Scene.FrameBuffer.MetaData["PerImageDecision"] = new List<Candidate>();
+        } else if (numUpdates < MaxNumUpdates) {
             foreach (var (c, img) in momentImages) {
                 img.Scale(iteration / (iteration + 1.0f));
             }
@@ -193,7 +193,10 @@ class AdaptiveVcm : MomentEstimatingVcm {
         // Apply the optimized global sample counts
         NumLightPaths = n;
         NumConnections = c ?? NumConnections;
-        useMergesGlobal = m;
+        UseMergesGlobally = m;
+
+        Console.WriteLine(timer.ElapsedMilliseconds);
+        Console.WriteLine(new Candidate(n, c, m));
 
         Scene.FrameBuffer.MetaData["PerImageDecision"].Add(new Candidate(n, c, m));
         if (numUpdates == 1)

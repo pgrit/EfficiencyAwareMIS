@@ -24,15 +24,4 @@ class FilterExperiment : Experiment {
 
         return methods;
     }
-
-    public override void OnDoneScene(Scene scene, string dir) {
-        // Read unfiltered moments from the file
-
-        // Apply filtering with different parameters and run the optimizer
-        // (tests the adverse effect of filtering in a setting with little / no noise)
-    }
-
-    public override void OnDone(string workingDirectory) {
-        // Generate overview figure ...
-    }
 }
