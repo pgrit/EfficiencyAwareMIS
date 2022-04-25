@@ -60,9 +60,9 @@ def veach_crop(img): return crop(img, 80, 0, 640-80*2, 480)
 def no_crop(img): return img
 
 fig.figure([
-    [make_scene_grid("BoxLargeLight", -1, True, f"n={0:06},c=00,m=0", f"n={640*480*2:06},c=00,m=0", "$$\\frac{n=1}{n=614k}$$", no_crop)],
-    [make_scene_grid("HotLivingMod", 1, False, f"n={0:06},c=00,m=0", f"n={640*480*2:06},c=00,m=0", "$$\\frac{n=1}{n=614k}$$", no_crop)],
-    [make_scene_grid("TargetPractice", 1, False, f"n={0:06},c=00,m=0", f"n={640*480*2:06},c=00,m=0", "$$\\frac{n=1}{n=614k}$$", no_crop)],
+    [make_scene_grid("BoxLargeLight", -1, True, f"n={0:06},c=00,m=0", f"n={640*480*2:06},c=00,m=0", "$$\\frac{n=0}{n=614k}$$", no_crop)],
+    [make_scene_grid("HotLivingMod", 1, False, f"n={0:06},c=00,m=0", f"n={640*480*2:06},c=00,m=0", "$$\\frac{n=0}{n=614k}$$", no_crop)],
+    [make_scene_grid("TargetPractice", 1, False, f"n={0:06},c=00,m=0", f"n={640*480*2:06},c=00,m=0", "$$\\frac{n=0}{n=614k}$$", no_crop)],
 ], 8.5, "VarMomentRatiosLowVar.pdf", backend)
 
 fig.figure([
