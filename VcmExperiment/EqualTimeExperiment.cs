@@ -2,7 +2,7 @@ namespace EfficiencyAwareMIS.VcmExperiment;
 
 class EqualTimeExperiment : Experiment {
     List<AdaptiveVcm> groundTruthMoment = null, groundTruthVariance = null;
-    string[] suffixes = new[] { "", "CostMerge0.1", "CostMerge0.5", "CostMerge2", "CostMerge10" };
+    string[] suffixes = new[] { "" /*, "CostMerge0.1", "CostMerge0.5", "CostMerge2", "CostMerge10" */};
 
     public override List<Method> MakeMethods() {
         List<Method> methods = new() {
@@ -45,12 +45,24 @@ class EqualTimeExperiment : Experiment {
         // groundTruthMoment = new();
         // groundTruthVariance = new();
         // foreach (var suffix in suffixes) {
+        //     var masks = Layers.LoadFromFile($"Results/GroundTruth/{sceneName}/Masks{suffix}.exr");
+        //     var momentMask = masks["merge-moment"] as MonochromeImage;
+        //     var varMask = masks["merge-var"] as MonochromeImage;
+
+        //     var lines = System.IO.File.ReadAllLines($"Results/GroundTruth/{sceneName}" + $"/GlobalCounts{suffix}.txt");
+        //     int momentNumPaths = int.Parse(lines[16]);
+        //     int momentNumConnect = int.Parse(lines[17]);
+        //     int varNumPaths = int.Parse(lines[14]);
+        //     int varNumConnect = int.Parse(lines[15]);
+
         //     groundTruthMoment.Add(new AdaptiveVcm() {
         //         DisableCorrelAware = false,
         //         NumIterations = int.MaxValue,
         //         MaximumRenderTimeMs = 60000,
         //         MaxNumUpdates = 0,
-        //         NumConnections = 1,
+        //         NumConnections = momentNumConnect,
+        //         NumLightPaths = momentNumPaths,
+        //         MergeMask = momentMask,
         //         UsePerPixelConnections = false,
         //     });
         //     groundTruthVariance.Add(new AdaptiveVcm() {
@@ -58,7 +70,9 @@ class EqualTimeExperiment : Experiment {
         //         NumIterations = int.MaxValue,
         //         MaximumRenderTimeMs = 60000,
         //         MaxNumUpdates = 0,
-        //         NumConnections = 1,
+        //         NumConnections = varNumConnect,
+        //         NumLightPaths = varNumPaths,
+        //         MergeMask = varMask,
         //         UsePerPixelConnections = false,
         //     });
         //     methods.Add(new($"GroundTruthMoment60s{suffix}", groundTruthMoment[^1]));
@@ -68,23 +82,7 @@ class EqualTimeExperiment : Experiment {
         return methods;
     }
 
-    public override void OnStartScene(Scene scene, string dir) {
-        if (groundTruthMoment == null) return;
+    string sceneName;
 
-        string sceneName = System.IO.Path.GetFileName(dir);
-        int i = 0;
-        foreach (var suffix in suffixes) {
-            var masks = Layers.LoadFromFile($"Results/GroundTruth/{sceneName}/Masks{suffix}.exr");
-            groundTruthMoment[i].MergeMask = masks["merge-moment"] as MonochromeImage;
-            groundTruthVariance[i].MergeMask = masks["merge-var"] as MonochromeImage;
-
-            var lines = System.IO.File.ReadAllLines($"Results/GroundTruth/{sceneName}" + $"/GlobalCounts{suffix}.txt");
-            groundTruthMoment[i].NumLightPaths = int.Parse(lines[16]);
-            groundTruthMoment[i].NumConnections = int.Parse(lines[17]);
-            groundTruthVariance[i].NumLightPaths = int.Parse(lines[14]);
-            groundTruthVariance[i].NumConnections = int.Parse(lines[15]);
-
-            i++;
-        }
-    }
+    public override void OnStartScene(Scene scene, string dir) => sceneName = System.IO.Path.GetFileName(dir);
 }
