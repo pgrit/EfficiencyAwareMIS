@@ -21,7 +21,9 @@ cd VcmExperiment
 dotnet run -c Release
 ```
 
-The rendered results can be viewed by manually opening the .exr files in `VcmExperiment/Results/`. There is also a [.NET interactive](https://github.com/dotnet/interactive) notebook, [FigureScripts/EqualTime.dib](FigureScripts/EqualTime.dib), that loads the rendered images, computes the speed-ups in terms of relMSE, and displays the images in interactive viewers.
+The rendered results can be viewed by manually opening the .exr files in `VcmExperiment/Results/`.
+
+The scripts and [.NET interactive](https://github.com/dotnet/interactive) notebooks in `FigureScripts` can also process and display the images and auxiliary data. They are, however, not documented and some of them depend on a currently not yet public library (ImageLab) to display the images.
 
 ## Project structure
 
