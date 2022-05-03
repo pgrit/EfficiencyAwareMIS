@@ -1,12 +1,17 @@
-# Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering
+# Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering Algorithms
 
-Implementation of the paper "Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering". This is a cleaned re-implementation of the original code with additional improvements. This is not the version that was used to generate the results in the paper. Results are similar but not identical.
+Implementation of the paper:
+
+Pascal Grittmann, Ömercan Yazici, Iliyan Georgiev, and Philipp Slusallek. 2022. Efficiency-Aware Multiple Importance Sampling for Bidirectional Rendering Algorithms. ACM Trans. Graph. 41, 4, Article 80 (July 2022), 12 pages. https://doi.org/10.1145/3528223.3530126
+
+This is a cleaned re-implementation of the original code with additional improvements. This is not the version that was used to generate the results in the paper. Results are similar but not identical.
 
 Compared to the paper, the main changes are:
 - Number of connections can be controlled on a per-pixel basis (experimental, disabled by default)
 - A simple iterative update scheme: the optimizer is run multiple times with exponentially growing time between subsequent updates
 - Outlier rejection: the 0.1% of pixels with highest second moment are ignored when optimizing per-image sample counts
 - A more elaborate cost heuristic that incorporates the cost of building the photon map acceleration structure (experimental, the old heuristic is also implemented but commented out in [VcmExperiment/CostHeuristic.cs](VcmExperiment/CostHeuristic.cs))
+- Based on a newer version of SeeSharp that adapts the photon mapping radius in a pixel based on the pixel footprint and uses Embree for the kNN queries (i.e., different overall photon mapping performance than the version used in the paper)
 
 ## Dependencies
 
