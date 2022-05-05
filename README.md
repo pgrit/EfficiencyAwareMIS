@@ -35,11 +35,11 @@ The scripts and [.NET interactive](https://github.com/dotnet/interactive) notebo
 This repository contains a lot of code for debugging, testing, and visualizing various things. Not all of that is properly documented.
 
 The following core pieces are most relevant to understand the method or find out how to implement it in your own renderer. Sorted from most interesting to least interesting:
-- [VcmOptimizer.cs](VcmExperiment/VcmOptimizer.cs) implements the optimizer itself, i.e., the functions `OptPerPixel` and `OptPerImage` from Algorithm 1 in the paper.
+- [VcmOptimizer.cs](VcmExperiment/VcmOptimizer.cs) implements the optimizer itself, i.e., the functions `PixelLevelOptimize` and `ImageLevelOptimize` from Algorithm 1 in the paper.
 - [AdaptiveVcm.cs](VcmExperiment/AdaptiveVcm.cs) integrates this logic into a VCM integrator and computes the second moments via our correction factors.
 - [OnDemandVcm.cs](VcmExperiment/OnDemandVcm.cs) specializes the integrator to start with unidirectional path tracing and a reduced set of candidates
 - [MomentEstimatingVcm](VcmExperiment/MomentEstimatingVcm.cs) computes the MIS weights of the proxy strategy for each sample (basically a slightly modified copy&paste of the normal MIS computations)
 - [PathLengthEstimatingVcm](VcmExperiment/PathLengthEstimatingVcm.cs) computes the path lengths and photon count statistics used by our cost heuristic
 - [CorrelAwareVcm](VcmExperiment/CorrelAwareVcm.cs) is a slightly modified version of the correlation-aware MIS weights
-- [MergeMaskVcm](VcmExperiment/MergeMaskVcm.cs) implements a VCM integrator where merging is enabled on a per-pixel basis, and the number of connections is also set per-pixel
+- [SampleMaskVcm](VcmExperiment/SampleMaskVcm.cs) implements a VCM integrator where merging is enabled on a per-pixel basis, and the number of connections is also set per-pixel
 
