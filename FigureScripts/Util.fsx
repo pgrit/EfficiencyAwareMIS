@@ -1,11 +1,9 @@
 // Image viewer
-#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
-#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.GUI.dll"
 #r "nuget: SimpleImageIO"
 
 // Plotting stuff
-#r "nuget: Plotly.NET, 2.0.0-preview.18"
-#r "nuget: Plotly.NET.Interactive, 2.0.0-preview.18"
+#r "nuget: Plotly.NET"
+#r "nuget: Plotly.NET.Interactive"
 
 #r "../VcmExperiment/bin/Release/net6.0/VcmExperiment.dll"
 
@@ -13,10 +11,14 @@ open EfficiencyAwareMIS.VcmExperiment
 open Plotly.NET
 open System.IO
 open SimpleImageIO
-open ImageLab.Flip
-open ImageLab.GUI.Util
+open SimpleImageIO.FlipBook
 
-HTML(Flip.MakeHeader()).Display() |> ignore
+HTML(FlipBook.MakeHeader()).Display() |> ignore
+
+let AdjustExposure e (img:ImageBase) =
+    let cpy = img.Copy()
+    cpy.Scale(e)
+    cpy
 
 let CompareMomentVarRatio scene firstCandidate secondCandidate exposure =
     let dirname = "../VcmExperiment/Results/GroundTruth/" + scene
@@ -51,19 +53,17 @@ let CompareMomentVarRatio scene firstCandidate secondCandidate exposure =
     avgMomentRatio <- MathF.Exp(avgMomentRatio)
     avgVarRatio <- MathF.Exp(avgVarRatio)
 
-    let ratioColor = new FalseColorMap()
+    let ratioColor = new FalseColor(new LinearColormap())
     let momentRatioColor = ratioColor.Apply(momentRatio)
     let varianceRatioColor = ratioColor.Apply(varianceRatio)
-    let mapExposure = new ToneMapExposure()
-    mapExposure.Exposure <- exposure
 
     let _ = HTML("<p>Geometric mean of per-pixel ratios:<p>").Display()
     let _ = (Map [ ("Moment", avgMomentRatio); ("Variance", avgVarRatio) ]).Display()
 
-    HTML(Flip.Make [|
+    HTML(FlipBook.Make [|
         struct ("Moment ratio", momentRatioColor :> ImageBase)
         struct ("Variance ratio", varianceRatioColor :> ImageBase)
-        struct ("Reference", mapExposure.Apply(reference) :> ImageBase)
+        struct ("Reference", (AdjustExposure exposure reference) :> ImageBase)
     |]).Display()
 
 let GetErrors scene candidate =
@@ -92,8 +92,6 @@ let mergeColor = new FalseColor(new LinearColormap(0f, 1f))
 
 let ShowMasks scene exposure suffix prefix =
     let dirname = "../VcmExperiment/Results/GroundTruth/" + scene
-    let mapExposure = new ToneMapExposure()
-    mapExposure.Exposure <- exposure
 
     let masks = Layers.LoadFromFile(dirname + $"/{prefix}Masks{suffix}.exr")
     let connectVar = connectColor.Apply(masks["connect-var"]) :> ImageBase
@@ -103,12 +101,12 @@ let ShowMasks scene exposure suffix prefix =
     let reference = new RgbImage(dirname + "/Reference.exr") :> ImageBase
     let lines = System.IO.File.ReadAllLines(dirname + $"/{prefix}GlobalCounts{suffix}.txt")
 
-    HTML(Flip.Make[|
+    HTML(FlipBook.Make[|
         struct ("ConnectVar", connectVar)
         struct ("MergeVar", mergeVar)
         struct ("ConnectMoment", connectMoment)
         struct ("MergeMoment", mergeMoment)
-        struct ("Reference", mapExposure.Apply(reference))
+        struct ("Reference", AdjustExposure exposure reference)
     |]).Display() |> ignore
 
     // Read the global decisions and display them
@@ -128,19 +126,18 @@ let ShowMasks scene exposure suffix prefix =
 
 let ShowRenders scene exposure =
     let dirname = "../VcmExperiment/Results/GroundTruth/" + scene
-    let mapExposure = new ToneMapExposure()
-    mapExposure.Exposure <- exposure
+    let mapExposure = AdjustExposure exposure
     let reference = new RgbImage(dirname + "/Reference.exr")
     let pathTracer = new RgbImage(dirname + "/n=000000,c=00,m=0/Render.exr")
     let vcm = new RgbImage(dirname + "/n=307200,c=04,m=1/Render.exr")
     let bdpt = new RgbImage(dirname + "/n=307200,c=04,m=0/Render.exr")
     let lt = new RgbImage(dirname + "/n=307200,c=00,m=0/Render.exr")
-    HTML(Flip.Make[|
-        struct ("Reference", mapExposure.Apply(reference) :> ImageBase)
-        struct ("PT", mapExposure.Apply(pathTracer) :> ImageBase)
-        struct ("PT+LT", mapExposure.Apply(lt) :> ImageBase)
-        struct ("BDPT", mapExposure.Apply(bdpt) :> ImageBase)
-        struct ("VCM", mapExposure.Apply(vcm) :> ImageBase)
+    HTML(FlipBook.Make[|
+        struct ("Reference", mapExposure(reference))
+        struct ("PT", mapExposure(pathTracer))
+        struct ("PT+LT", mapExposure(lt))
+        struct ("BDPT", mapExposure(bdpt))
+        struct ("VCM", mapExposure(vcm))
     |]).Display() |> ignore
 
 let numLightPathCandidates = [ 0.25f; 0.5f; 0.75f; 1.0f; 2.0f ]
@@ -204,8 +201,7 @@ let TestFilter scene exposure filterMoments filterMergeMask filterConnectMask =
 
     let merge, connect, globalDecision = OptimizeWithFilter scene exposure filterMoments filterMergeMask filterConnectMask
 
-    let mapExposure = new ToneMapExposure()
-    mapExposure.Exposure <- exposure
+    let mapExposure = AdjustExposure exposure
     let connectColor = new FalseColor(new LinearColormap(0f, 16f))
     let mergeColor = new FalseColor(new LinearColormap(0f, 1f))
 
@@ -213,13 +209,13 @@ let TestFilter scene exposure filterMoments filterMergeMask filterConnectMask =
     let masks = Layers.LoadFromFile(groundTruthDir + $"/Masks.exr")
     let lines = System.IO.File.ReadAllLines(groundTruthDir + $"/GlobalCounts.txt")
 
-    HTML(Flip.Make[|
+    HTML(FlipBook.Make[|
         struct("Connect", connectColor.Apply(connect) :> ImageBase)
         struct("Connect (ground truth)", connectColor.Apply(masks["connect-moment"]) :> ImageBase)
         struct("Merge", mergeColor.Apply(merge) :> ImageBase)
         struct("Merge (ground truth)", mergeColor.Apply(masks["merge-moment"]) :> ImageBase)
-        struct("Reference", mapExposure.Apply(reference) :> ImageBase)
-        struct("Render", mapExposure.Apply(render) :> ImageBase)
+        struct("Reference", mapExposure(reference) :> ImageBase)
+        struct("Render", mapExposure(render) :> ImageBase)
     |]).Display() |> ignore
 
     HTML("<p>Global optimization:</p>").Display() |> ignore

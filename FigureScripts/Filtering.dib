@@ -1,13 +1,10 @@
 #!fsharp
 
 #r "nuget: SimpleImageIO"
-#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.Flip.dll"
-#r "../../imageLab/ImageLab.Flip/bin/Release/net6.0/ImageLab.GUI.dll"
 #load "Util.fsx"
 open Util
-open ImageLab.Flip
-open ImageLab.GUI.Util
 open SimpleImageIO
+open SimpleImageIO.FlipBook
 
 #!fsharp
 
@@ -58,15 +55,14 @@ Below we show the 1spp renderings from which the second moments are computed for
 
 #!fsharp
 
-let ShowRenders scene  exposure =
-    let mapExposure = new ToneMapExposure()
-    mapExposure.Exposure <- exposure
+let ShowRenders scene exposure =
+    let mapExposure = AdjustExposure exposure
     let dir = "../VcmExperiment/Results/Filtering/" + scene
     let reference = new RgbImage(Path.Join(dir, "Reference.exr"))
     let render = new RgbImage(Path.Join(dir, "MomentEstimator", "Render.exr"))
-    HTML(Flip.Make[|
-        struct("Render", mapExposure.Apply(render) :> ImageBase)
-        struct("Reference", mapExposure.Apply(reference) :> ImageBase)
+    HTML(FlipBook.Make[|
+        struct("Render", mapExposure(render))
+        struct("Reference", mapExposure(reference))
     |]).Display() |> ignore
 
 ShowRenders "RoughGlasses" 0f
@@ -86,7 +82,7 @@ let EvaluateFilters scene preOps postOps =
     |]
     masks <- Array.insertAt 0 struct("Reference", convergedMasks["merge-moment"]) masks
 
-    HTML(Flip.Make(masks))
+    HTML(FlipBook.Make(masks))
 
 #!markdown
 
